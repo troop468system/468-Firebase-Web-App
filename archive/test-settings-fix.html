@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Test - TroopManager</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #e8f5e9; border-color: #4caf50; }
+        .warning { background-color: #fff3e0; border-color: #ff9800; }
+        .error { background-color: #ffebee; border-color: #f44336; }
+        h1 { color: #1976d2; }
+        h2 { color: #333; }
+        code { background: #f5f5f5; padding: 4px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 TroopManager Settings Fix</h1>
+    
+    <div class="section success">
+        <h2>✅ Issue Identified & Fixed</h2>
+        <p><strong>Problem:</strong> Settings page was empty because it was trying to load from Firebase (not configured) without fallback to environment variables.</p>
+        <p><strong>Solution:</strong> Updated Settings component to fallback to environment variables when Firebase is not available.</p>
+    </div>
+
+    <div class="section success">
+        <h2>✅ Environment Variables Confirmed</h2>
+        <ul>
+            <li><strong>Google Sheets API Key:</strong> <code>AIzaSyA64XVqb3zH3pomVmmiGBYUW-wehA3CGpE</code></li>
+            <li><strong>Sheet ID:</strong> <code>1sQWCTzOJ8irH0zq5AzQykw8UbfovcjEtRVdYI9XA2q8</code></li>
+            <li><strong>Email User:</strong> <code>your_email@gmail.com</code></li>
+            <li><strong>SMTP Host:</strong> <code>smtp.gmail.com</code> (default)</li>
+        </ul>
+    </div>
+
+    <div class="section warning">
+        <h2>⚠️ What Should Now Appear in Settings</h2>
+        <p>After restarting the React app, the Settings page should show:</p>
+        <ul>
+            <li>Google Sheets API Key field populated with your API key</li>
+            <li>Sheet ID field populated with your sheet ID</li>
+            <li>SMTP Host field showing "smtp.gmail.com"</li>
+            <li>SMTP Port field showing "587"</li>
+            <li>"Test Connection" button should work for Google Sheets</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🧪 Testing Steps</h2>
+        <ol>
+            <li>Wait for React server to fully start (may take 1-2 minutes)</li>
+            <li>Open <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+            <li>Navigate to Settings page</li>
+            <li>Verify fields are populated</li>
+            <li>Click "Test Connection" for Google Sheets</li>
+            <li>Go to Dashboard and try "Sync Now"</li>
+        </ol>
+    </div>
+
+    <div class="section success">
+        <h2>🔧 Changes Made</h2>
+        <ul>
+            <li>Updated <code>src/pages/Settings.js</code> to use environment variables as fallback</li>
+            <li>Fixed compilation error with TestTube icon (replaced with Science icon)</li>
+            <li>Environment variables properly configured in <code>.env</code> file</li>
+            <li>Google Sheets service already using environment variables correctly</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 Your Data Preview</h2>
+        <p>Your Google Sheet contains:</p>
+        <ul>
+            <li><strong>Headers:</strong> ["Timestamp", "Please select one", "Enter something"]</li>
+            <li><strong>Sample data:</strong> ["8/15/2025 4:24:13", "Option 1", "Test1"]</li>
+            <li><strong>Total rows:</strong> 2 (including header)</li>
+        </ul>
+    </div>
+
+    <script>
+        // Check if React app is running
+        setTimeout(() => {
+            fetch('http://localhost:3000')
+                .then(() => {
+                    document.body.innerHTML += '<div class="section success"><h2>✅ React App is Running!</h2><p><a href="http://localhost:3000" target="_blank">Click here to open TroopManager</a></p></div>';
+                })
+                .catch(() => {
+                    document.body.innerHTML += '<div class="section error"><h2>❌ React App Not Running</h2><p>Please run <code>npm start</code> to start the development server.</p></div>';
+                });
+        }, 3000);
+    </script>
+</body>
+</html>

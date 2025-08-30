@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow full access for testing - completely open rules
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Explicit rules for registration requests
+    match /registrationRequests/{document} {
+      allow read, write: if true;
+    }
+    
+    // Explicit rules for users collection
+    match /users/{document} {
+      allow read, write: if true;
+    }
+  }
+}
