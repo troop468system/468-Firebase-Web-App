@@ -1,0 +1,48 @@
+meta {
+  name: Update Sheet
+  type: http
+  seq: 2
+}
+
+post {
+  url: https://script.google.com/macros/s/AKfycbx9PRWvVJCEIqxivmz1PpT0yfjaM-LU5LqEfKWt-hBqwQIYYkaZdX2GiSYxynT2QLtK/exec
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "rows": [
+      {
+        "type": "REGISTRATION_APPROVAL",
+        "to": "parent@troop468.com",
+        "name": "Test Parent",
+        "role": "parent",
+        "subject": "Scout Registration Approved",
+        "htmlBody": "<h2>Welcome to Troop 468!</h2><p>Your scout registration has been approved.</p>",
+        "status": "PENDING",
+        "meta": {
+          "testMode": true,
+          "source": "Bruno Multi-Email Test"
+        }
+      },
+      {
+        "type": "REGISTRATION_NOTIFICATION",
+        "to": "scoutmaster@troop468.com",
+        "name": "Scoutmaster",
+        "role": "leader",
+        "subject": "New Scout Registration",
+        "htmlBody": "<h2>New Scout Registered</h2><p>A new scout has joined the troop.</p>",
+        "status": "PENDING",
+        "meta": {
+          "testMode": true,
+          "source": "Bruno Multi-Email Test"
+        }
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+}

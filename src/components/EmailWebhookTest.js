@@ -23,6 +23,11 @@ const EmailWebhookTest = () => {
 
   useEffect(() => {
     checkEnvironment();
+    // Debug: Log all environment variables on component mount
+    console.log('🔍 EmailWebhookTest - Environment check on mount:');
+    console.log('REACT_APP_EMAIL_WEBHOOK_URL:', process.env.REACT_APP_EMAIL_WEBHOOK_URL);
+    console.log('REACT_APP_WEBHOOK_TOKEN:', process.env.REACT_APP_WEBHOOK_TOKEN);
+    console.log('All REACT_APP vars:', Object.keys(process.env).filter(key => key.startsWith('REACT_APP')));
   }, []);
 
   const checkEnvironment = () => {
@@ -103,6 +108,13 @@ const EmailWebhookTest = () => {
     setTestResult('');
 
     const webhookUrl = process.env.REACT_APP_EMAIL_WEBHOOK_URL;
+    console.log('🔍 Debug - Webhook URL:', webhookUrl);
+    console.log('🔍 Debug - All env vars:', {
+      webhookUrl: process.env.REACT_APP_EMAIL_WEBHOOK_URL,
+      webhookToken: process.env.REACT_APP_WEBHOOK_TOKEN,
+      apiKey: process.env.REACT_APP_GOOGLE_API_KEY
+    });
+    
     if (!webhookUrl) {
       setTestResult('❌ REACT_APP_EMAIL_WEBHOOK_URL is not configured');
       setLoading(false);
