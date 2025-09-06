@@ -188,6 +188,137 @@ class GoogleCalendarService {
     
     return await this.getEventsForDateRange(startDate, endDate);
   }
+
+  // Create a new calendar event
+  // Note: This typically requires OAuth2 authentication with write permissions
+  // API key authentication usually only provides read access
+  async createEvent(eventData) {
+    try {
+      if (!this.apiKey) {
+        throw new Error('Google API Key not configured');
+      }
+
+      console.log('🗓️ Creating calendar event...', eventData);
+      
+      // Use primary calendar if no specific calendar ID is configured for writing
+      const targetCalendarId = this.calendarId === this.fallbackCalendarId ? 'primary' : this.calendarId;
+      const url = `${this.baseUrl}/calendars/${encodeURIComponent(targetCalendarId)}/events?key=${this.apiKey}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Calendar event created successfully:', result.id);
+        return {
+          success: true,
+          event: result,
+          message: 'Event created successfully'
+        };
+      } else {
+        const errorText = await response.text();
+        let errorMessage = `HTTP ${response.status}`;
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error?.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        // Provide helpful error messages for common authentication issues
+        if (response.status === 401) {
+          errorMessage = 'Authentication failed. API key authentication may not have write permissions to this calendar. Consider implementing OAuth2 for write access.';
+        } else if (response.status === 403) {
+          errorMessage = 'Access forbidden. This API key may not have permission to create events in this calendar. Write operations typically require OAuth2 authentication.';
+        } else if (response.status === 404) {
+          errorMessage = 'Calendar not found. Please check the calendar ID configuration.';
+        }
+        
+        console.error('❌ Failed to create calendar event:', errorMessage);
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('❌ Error creating calendar event:', error);
+      throw error;
+    }
+  }
+
+  // Helper method to format event data for Google Calendar API
+  formatEventForAPI(eventData) {
+    const {
+      summary,
+      description = '',
+      location = '',
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      isAllDay = false
+    } = eventData;
+
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    if (isAllDay) {
+      return {
+        summary,
+        description,
+        location,
+        start: {
+          date: startDate,
+          timeZone
+        },
+        end: {
+          date: endDate,
+          timeZone
+        }
+      };
+    } else {
+      const startDateTime = new Date(`${startDate}T${startTime}`);
+      const endDateTime = new Date(`${endDate}T${endTime}`);
+      
+      return {
+        summary,
+        description,
+        location,
+        start: {
+          dateTime: startDateTime.toISOString(),
+          timeZone
+        },
+        end: {
+          dateTime: endDateTime.toISOString(),
+          timeZone
+        }
+      };
+    }
+  }
+
+  // Check if the service supports write operations
+  canWrite() {
+    // With API key only, write operations are typically not supported
+    // This would return true if OAuth2 authentication was implemented
+    return false;
+  }
+
+  // Get authentication status and capabilities
+  getAuthStatus() {
+    return {
+      configured: this.isConfigured(),
+      hasApiKey: !!this.apiKey,
+      calendarId: this.calendarId,
+      canRead: this.isConfigured(),
+      canWrite: this.canWrite(),
+      authMethod: this.apiKey ? 'API Key' : 'None',
+      recommendations: this.apiKey 
+        ? ['API key provides read-only access', 'Implement OAuth2 for write operations']
+        : ['Configure Google API key for read access', 'Implement OAuth2 for full functionality']
+    };
+  }
 }
 
 // Export singleton instance
