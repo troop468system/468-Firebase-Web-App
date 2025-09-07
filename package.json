@@ -28,9 +28,21 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PORT=3030 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:watch": "react-scripts test --watch",
+    "test:coverage": "react-scripts test --coverage --silent --watchAll=false",
+    "test:ci": "react-scripts test --coverage --silent --watchAll=false --testResultsProcessor=jest-junit",
+    "test:integration": "react-scripts test --testPathPattern=integration --watchAll=false",
+    "test:components": "react-scripts test --testPathPattern=components --watchAll=false",
+    "test:services": "react-scripts test --testPathPattern=services --watchAll=false",
+    "test:debug": "react-scripts --inspect-brk test --runInBand --no-cache",
+    "test:all": "./testing/test-runner.sh",
+    "dev": "./deploy.sh dev",
+    "dev:skip-tests": "./deploy.sh dev --skip-tests",
+    "deploy": "./deploy.sh prod",
+    "deploy:skip-tests": "./deploy.sh prod --skip-tests",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -53,6 +65,8 @@
   },
   "proxy": "http://localhost:3001",
   "devDependencies": {
-    "firebase-admin": "^13.4.0"
+    "firebase-admin": "^13.4.0",
+    "jest-junit": "^16.0.0",
+    "jest-watch-typeahead": "^2.2.2"
   }
 }

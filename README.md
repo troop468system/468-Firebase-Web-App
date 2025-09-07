@@ -1,850 +1,175 @@
-# Troop 468 Management System 🏕️
+# 🏕️ Troop Manager
 
-A comprehensive Firebase-based application for managing Scout Troop 468 operations, including registration management, calendar integration, contact synchronization, and automated email notifications.
+A comprehensive web application for managing Boy Scout troop activities, built with React and Firebase.
 
 ## 🚀 Quick Start
 
 ```bash
-# Clone and setup
-git clone <repository-url>
-cd TroopManager
+# Development
+npm run dev:skip-tests          # Quick start
+npm run dev                     # With full testing
 
-# Setup environment variables
-./setup-env.sh
+# Production
+npm run deploy                  # Deploy with validation
+npm run deploy:skip-tests       # Quick deploy
 
-# Install and run
-npm install
-npm start
+# Testing
+npm run test:all                # Run all tests
+npm test                        # Interactive testing
 ```
 
-## ✨ Features
+## 📁 Project Structure
 
-### 🏠 **Core Functionality**
-- **📊 Dashboard**: Overview of system activities and quick access
-- **📋 Registration System**: Complete onboarding workflow with admin approval
-- **📅 Calendar Integration**: Google Calendar sync with event management
-- **👥 Contact Management**: Google Sheets synchronization with search
-- **📧 Email Automation**: Google Apps Script powered email system
-- **🔐 Authentication**: Firebase Auth with role-based access
+```
+TroopManager/
+├── README.md                   # This file
+├── deploy.sh                   # Deployment script
+├── docs/                       # 📚 Detailed documentation
+├── testing/                    # 🧪 Test utilities
+├── src/                        # 💻 Application code
+│   ├── components/             # React components
+│   ├── pages/                  # Application pages
+│   ├── services/               # Business logic
+│   └── __tests__/              # Test files
+├── public/                     # Static assets
+└── package.json                # Dependencies & scripts
+```
 
-### 📱 **User Interface**
-- **🎨 Modern Design**: Material-UI with soft, rounded, pastel color scheme
-- **📱 Responsive Layout**: Works on desktop, tablet, and mobile
-- **🔄 Collapsible Navigation**: Space-efficient sidebar menu
-- **⚡ Real-time Updates**: Live data synchronization
-- **🌙 Professional Styling**: Consistent 5px border radius theme
+## 🎯 Key Features
 
-### 👥 **Organization Management**
-- **📋 Hierarchy Chart**: Interactive organization structure
-- **🎯 Role Assignment**: Position-based responsibility management
-- **👨‍🏫 Patrol Groups**: Assistant Scoutmaster grouping by patrol
-- **📊 Visual Structure**: Clear reporting relationships
+- **📧 Email Management** - Automated notifications and queue
+- **📅 Calendar Integration** - Google Calendar events
+- **👥 User Management** - Scout and leader profiles
+- **📊 Activity Tracking** - Merit badges, training, events
+- **🔐 Authentication** - Firebase Auth with Google
+- **📱 Responsive Design** - Desktop and mobile
 
-## 🏗️ Architecture
+## 🛠️ Technology Stack
 
-### 💻 **Technology Stack**
-- **Frontend**: React 18, Material-UI 5, React Router
+- **Frontend**: React 18, Material-UI, React Router
 - **Backend**: Firebase (Auth, Firestore, Hosting)
-- **APIs**: Google Sheets API, Google Calendar API
-- **Email**: Google Apps Script + Gmail SMTP
-- **State Management**: React Context + Hooks
+- **APIs**: Google Calendar, Google Sheets
+- **Testing**: Jest, React Testing Library (64 tests, 100% pass rate)
 
-### 🔧 **Email System Architecture**
-```
-Registration Request (Frontend)
-       ↓
-Write to Google Sheets (API Key)
-       ↓
-Google Apps Script Monitors Sheet
-       ↓
-Gmail Sends Emails (No API Key Needed)
-       ↓
-Status Updated in Sheet
-```
+## 📚 Documentation
 
-**Benefits:**
-- ✅ **$0 Cost** - No Firebase Blaze plan required
-- ✅ **Automatic Processing** - No manual intervention
-- ✅ **Professional Emails** - Full HTML formatting
-- ✅ **Email Tracking** - Status monitoring in Google Sheets
+### **Getting Started**
+- **[Setup Guide](docs/SETUP.md)** - Complete installation and configuration
+- **[Development Guide](docs/DEVELOPMENT.md)** - Development workflow and best practices
 
-## 🔧 Environment Setup
+### **Quality Assurance**
+- **[Testing Guide](docs/TESTING.md)** - Comprehensive testing documentation
+- **[Deployment Guide](docs/DEPLOY.md)** - Production deployment instructions
 
-### 📋 **Required Environment Variables**
+### **Documentation Overview**
 
-Create a `.env` file in the project root:
+#### **[Setup Guide](docs/SETUP.md)**
+Complete setup instructions including:
+- Prerequisites and installation
+- Firebase configuration
+- Environment variables
+- Verification steps
 
-```bash
-# Google API Configuration
-REACT_APP_GOOGLE_API_KEY=AIzaSyDdH6YmJvyRBphbavZIS68PtScx6Fz8RAQ
+#### **[Development Guide](docs/DEVELOPMENT.md)**
+Development workflow and best practices:
+- Project structure and organization
+- Development workflow
+- Testing strategy
+- Code quality guidelines
 
-# Google Sheets Configuration
-REACT_APP_GOOGLE_SHEETS_SHEET_ID=1sQWCTzOJ8irH0zq5AzQykw8UbfovcjEtRVdYI9XA2q8
+#### **[Testing Guide](docs/TESTING.md)**
+Comprehensive testing documentation:
+- Test categories and structure
+- Writing and running tests
+- Test utilities and mocking (testUtils.js)
+- Test orchestrator (test-runner.sh)
+- Coverage and best practices
 
-# Google Calendar Configuration  
-REACT_APP_GOOGLE_CALENDAR_ID=troop468.system@gmail.com
-```
+#### **[Deployment Guide](docs/DEPLOY.md)**
+Production deployment instructions:
+- Deployment script usage
+- Quality gates and validation
+- Firebase hosting setup
+- Troubleshooting and monitoring
 
-### 🔒 **Security Notes**
+## ⚡ Prerequisites
 
-**Why These Values Are Safe to Share:**
-- ✅ Google API keys are designed for client-side use
-- ✅ Protected by domain restrictions in Google Cloud Console
-- ✅ No sensitive backend data access
-- ✅ Apps Script handles authentication automatically
+- Node.js 16+
+- Firebase CLI: `npm install -g firebase-tools`
+- Firebase project with Auth and Firestore enabled
 
-**API Key Restrictions Setup:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Find your API key: `AIzaSyDdH6YmJvyRBphbavZIS68PtScx6Fz8RAQ`
-3. Add restrictions:
-   ```
-   Application restrictions: HTTP referrers
-   Website restrictions: 
-   - https://troop468-manage.web.app/*
-   - https://localhost:3000/* (for development)
-   
-   API restrictions: 
-   - Google Sheets API
-   - Google Calendar API
+## 🎯 Getting Started
+
+1. **Clone and Install**
+   ```bash
+   git clone <repository-url>
+   cd TroopManager
+   npm install
    ```
 
-### 👥 **Team Collaboration**
-
-**For New Team Members:**
-1. **Clone repository**: `git clone [repo-url]`
-2. **Run setup script**: `./setup-env.sh`
-3. **Install dependencies**: `npm install`
-4. **Start development**: `npm start`
-
-**Files for Collaboration:**
-- ✅ **`.env.example`** - Template (committed to Git)
-- ✅ **`.env`** - Actual values (gitignored)
-- ✅ **Setup script** - Automated environment setup
-- ✅ **Documentation** - Complete setup instructions
-
-## 🏗️ Firebase Configuration
-
-### 🔥 **Firebase Services Used**
-- **Authentication**: User login and registration
-- **Firestore**: User data and registration requests
-- **Hosting**: Static site deployment
-
-### 📊 **Firestore Collections**
-```javascript
-// Collection: registrationRequests
-{
-  scoutFirstName: "John",
-  scoutLastName: "Smith", 
-  scoutEmail: "john@example.com",
-  fatherFirstName: "Mike",
-  fatherEmail: "mike@example.com",
-  motherFirstName: "Sarah", 
-  motherEmail: "sarah@example.com",
-  status: "pending", // pending, approved, rejected
-  createdAt: timestamp,
-  includeFather: true,
-  includeMother: true
-}
-
-// Collection: users
-{
-  email: "admin@troop468.com",
-  displayName: "Admin User",
-  roles: ["admin"],
-  createdAt: timestamp
-}
-
-// Collection: invitationTokens  
-{
-  token: "uuid-string",
-  email: "user@example.com",
-  role: "scout", // scout, parent
-  requestId: "registration-request-id",
-  expiresAt: timestamp
-}
-```
-
-### 🔐 **Firestore Security Rules**
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow public access to registration requests (for testing)
-    match /registrationRequests/{document} {
-      allow read, write: if true;
-    }
-
-    // Allow public access to users collection (for testing)  
-    match /users/{document} {
-      allow read, write: if true;
-    }
-
-    // Default rule: deny all other access
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
-```
-
-## 📧 Email System Setup
-
-### 🔧 **Google Apps Script Configuration**
-
-1. **Create Apps Script Project**:
-   - Go to [script.google.com](https://script.google.com)
-   - Create new project: "Troop 468 Email Automation"
-   - Paste code from `google-apps-script-email.js`
-
-2. **Set Up Triggers**:
-   ```javascript
-   // Run the setup function once
-   function setup() {
-     // Creates onEdit and time-based triggers
-   }
+2. **Configure Environment**
+   ```bash
+   # Copy template and configure
+   cp .env.example .env
+   # Edit .env with your actual values (see .env.example for guidance)
    ```
 
-3. **Grant Permissions**:
-   - Gmail sending permissions
-   - Google Sheets read/write access
+3. **Start Development**
+   ```bash
+   npm run dev:skip-tests
+   # Visit http://localhost:3030
+   ```
 
-### 📊 **Email Queue Sheet Structure**
+4. **Deploy to Production**
+   ```bash
+   firebase login
+   npm run deploy
+   ```
 
-| Column | Purpose | Example |
-|--------|---------|---------|
-| Timestamp | When queued | 2025-01-19T10:30:00Z |
-| Type | APPROVAL/REJECTION | APPROVAL |
-| To Email | Recipient | scout@example.com |
-| To Name | Recipient name | John Smith |
-| Role | scout/parent | scout |
-| Subject | Email subject | Welcome to Troop 468! |
-| Body | HTML email body | `<div>...</div>` |
-| Status | PENDING/SENT/FAILED | SENT |
-| Sent At | When sent | 2025-01-19 10:31:15 |
-| Data | Full request data | JSON object |
+## 🧪 Testing
 
-### 📧 **Email Workflow**
+- **64 tests** with **100% pass rate**
+- **Component Tests** (23) - UI functionality
+- **Service Tests** (16) - Business logic  
+- **Integration Tests** (15) - API workflows
+- **Infrastructure Tests** (10) - Test environment
 
-1. **Admin approves/rejects** registration in Users page
-2. **Frontend writes** email data to Google Sheets EmailQueue tab
-3. **Apps Script detects** new rows automatically (onEdit trigger)
-4. **Gmail sends** emails using HTML templates
-5. **Status updated** in sheet: PENDING → SENT/FAILED
-
-## 📅 Calendar Integration
-
-### 📊 **Google Calendar Features**
-- **📅 Monthly View**: Compact calendar with event indicators
-- **📝 Event Details**: Master-detail layout with event information
-- **📱 Multi-day Events**: Proper date range display and selection
-- **📥 Calendar Export**: ICS file download for import to other calendars
-- **🔄 Automatic Sync**: Real-time event loading from Google Calendar
-
-### 🗓️ **Calendar Display Logic**
-```javascript
-// Event types handled:
-- All-day events: Date-only strings parsed as local dates
-- Timed events: Full datetime with timezone handling  
-- Multi-day events: Proper range calculation and display
-- Cross-month events: Shown in both affected months
-```
-
-### 📱 **Import Instructions**
-**For Google Calendar:**
-1. Download ICS file from app
-2. Open Google Calendar
-3. Click "+" next to "Other calendars"
-4. Select "Import" → Choose downloaded file
-
-**For Outlook/Apple Mail:**
-- Double-click downloaded ICS file
-
-## 👥 User Management & Authentication
-
-### 🔐 **Authentication Flow**
-
-**Registration Process:**
-1. **User fills registration form** (Scout + Parents)
-2. **Request stored in Firestore** with "pending" status
-3. **Admin reviews** in Users page
-4. **Approval triggers**:
-   - Email queue populated for all recipients
-   - Invitation tokens created
-   - Apps Script sends invitation emails
-5. **Users click email links** to set up accounts
-6. **Account creation** completes onboarding
-
-### 👨‍💼 **User Roles**
-- **Admin**: Full system access, user management
-- **User**: Basic access (placeholder for future features)
-- **Scout/Parent**: Role metadata for permissions
-
-### 📝 **Registration Form Features**
-- **👨‍🎓 Scout Information**: Name, preferred name, phone, email
-- **👨‍👩‍👧‍👦 Parent Information**: Optional father/mother with toggle switches
-- **🏠 Address Information**: Physical address
-- **📅 Dates**: Date joined (not current rank)
-- **🎨 Visual Design**: Color-coded sections with icons
-- **✅ Smart Validation**: Email format, required fields
-
-## 🏢 Organization Management
-
-### 📊 **Hierarchy Structure**
-```
-Committee Chair (Top)
-├── Vice Committee Chair
-│   ├── Advancement Chair
-│   ├── Camping Chair  
-│   ├── Equipment Chair
-│   ├── Event Chair
-│   ├── Finance Chair
-│   ├── Fundraising Chair
-│   ├── Popcorn Chair
-│   ├── Secretary
-│   ├── Media Chair
-│   ├── System Admins
-│   └── Advisors
-└── Scout Master
-    ├── Assistant Scout Masters (by patrol)
-    │   ├── Eagles Patrol
-    │   └── Hawks Patrol
-    ├── Merit Badge
-    ├── Presidential Award
-    ├── NHPA
-    └── Scoutbook
-```
-
-### 🎯 **Position Management**
-- **📋 Interactive Cards**: Click to assign people
-- **👥 Multiple Assignments**: Multiple people per position
-- **🎪 Patrol Grouping**: Assistant Scoutmasters by patrol
-- **🎨 Color Coding**: Visual distinction of roles
-- **🔗 Connection Lines**: Clear reporting relationships
-
-## 📊 Contact Management
-
-### 📋 **Google Sheets Integration**
-
-**Supported Headers:**
-```
-L.Name, F.Name, Rank, Troop Job, 
-"Main Phone# (to contact Scout)", Scout's E-Mail Address,
-Father, Father's E-Mail Address, Father's phone,
-Mother, Mother's E-Mail Address, Mother's phone,
-Address, Date to Join, DOB
-```
-
-**Data Processing:**
-- ✅ **Header Normalization**: Flexible header matching
-- ✅ **Empty Row Filtering**: Skips rows without key data
-- ✅ **Email Validation**: Format checking for all email fields
-- ✅ **Real-time Sync**: "Sync" button for latest data
-
-### 🔍 **Contact Display**
-- **📱 Card Layout**: Clean, organized contact cards
-- **🔍 Search Functionality**: Real-time contact filtering
-- **📞 Complete Information**: All 15 fields displayed
-- **🔄 Sync Status**: Visual feedback for data updates
+Run tests: `npm run test:all` or see [Testing Guide](docs/TESTING.md)
 
 ## 🚀 Deployment
 
-### 🔥 **Firebase Hosting**
-```bash
-# Build and deploy
-npm run build
-firebase deploy --only hosting
+The `deploy.sh` script handles both development and production:
 
-# Hosting URL: https://troop-468.web.app
-```
+- **Development**: `npm run dev` - Local server with hot reload
+- **Production**: `npm run deploy` - Build and deploy to Firebase
+- **Quality Gates**: Automated testing and linting
+- **Skip Tests**: Add `--skip-tests` flag for faster deployment
 
-### 📊 **Build Process**
-- ✅ **Environment Variables**: Automatically included in build
-- ✅ **Asset Optimization**: Minified JS/CSS
-- ✅ **Progressive Web App**: Offline capabilities
-- ✅ **Fast Loading**: Optimized bundle sizes
+See [Deployment Guide](docs/DEPLOY.md) for details.
 
-### 🌐 **Production Configuration**
-- **✅ HTTPS**: Automatic SSL certificates
-- **✅ CDN**: Global content delivery
-- **✅ Caching**: Optimized asset caching
-- **✅ Custom Domain**: Can be configured
+## 🤝 Contributing
 
-## 🧪 Development
+1. **Setup**: `npm run dev:skip-tests`
+2. **Develop**: Make changes in `src/`
+3. **Test**: `npm run test:all`
+4. **Deploy**: `npm run deploy`
 
-### 🛠️ **Local Development**
-```bash
-# Development server
-npm start
+See [Development Guide](docs/DEVELOPMENT.md) for workflow details.
 
-# Open http://localhost:3000
-# Hot reloading enabled
-# DevTools integration
-```
+## 🔗 External Resources
 
-### 🔧 **Code Structure**
-```
-src/
-├── components/         # Reusable UI components
-│   ├── Header.js      # Top navigation bar
-│   ├── Sidebar.js     # Left navigation menu
-│   └── RegistrationForm.js  # Registration form
-├── pages/             # Route components
-│   ├── Dashboard.js   # Main dashboard
-│   ├── Calendar.js    # Calendar integration
-│   ├── Users.js       # User management
-│   ├── Organization.js # Org chart
-│   └── ContactList.js # Contact management
-├── services/          # API and business logic
-│   ├── authService.js # Firebase Auth
-│   ├── googleSheetsService.js # Sheets API
-│   ├── googleCalendarService.js # Calendar API
-│   └── emailQueueService.js # Email system
-└── App.js            # Main app component
-```
+- **[Firebase Console](https://console.firebase.google.com)** - Backend management
+- **[Google Cloud Console](https://console.cloud.google.com)** - API management
+- **[React Documentation](https://reactjs.org/docs)** - React framework
+- **[Material-UI](https://mui.com/)** - UI component library
 
-### 🎨 **Styling Guidelines**
-- **Material-UI Components**: Consistent design system
-- **5px Border Radius**: Global theme setting
-- **Soft Pastel Colors**: Professional, approachable design
-- **Responsive Layout**: Mobile-first approach
-- **Accessibility**: WCAG compliance
+## 📞 Support
 
-## 🔍 Troubleshooting
-
-### ❌ **Common Issues**
-
-**Firebase Connection Issues:**
-```bash
-# Check Firebase config
-console.log(process.env.REACT_APP_FIREBASE_PROJECT_ID)
-
-# Verify Firestore rules allow access
-# Check Firebase Console for errors
-```
-
-**Google Sheets API Issues:**
-```bash
-# Verify API key in Google Cloud Console
-# Check Sheet ID is correct: 1sQWCTzOJ8irH0zq5AzQykw8UbfovcjEtRVdYI9XA2q8
-# Ensure sheet is publicly accessible or shared properly
-```
-
-**Email System Issues:**
-```bash
-# Check Google Apps Script logs
-# Verify EmailQueue sheet exists and has correct headers
-# Confirm Gmail sending permissions granted
-```
-
-**Calendar Integration Issues:**
-```bash
-# Verify calendar is public or accessible via API key
-# Check Google Calendar API is enabled
-# Confirm calendar ID: troop468.system@gmail.com
-```
-
-### 📊 **Debug Information**
-- **Browser Console**: Frontend error messages
-- **Firebase Console**: Backend logs and data
-- **Google Apps Script**: Email processing logs
-- **Network Tab**: API request/response details
-
-### 🔧 **Development Tools**
-- **React DevTools**: Component inspection
-- **Firebase Emulator**: Local testing
-- **Postman**: API testing
-- **Chrome DevTools**: Performance profiling
-
-## 📈 Monitoring & Analytics
-
-### 📊 **System Monitoring**
-- **Registration Requests**: Track pending/approved/rejected
-- **Email Delivery**: Monitor success/failure rates
-- **User Activity**: Login patterns and feature usage
-- **API Usage**: Google Sheets/Calendar API calls
-
-### 📧 **Email Tracking**
-```javascript
-// Email queue status monitoring
-PENDING: Waiting to be sent
-SENT: Successfully delivered  
-FAILED: Delivery error occurred
-```
-
-### 🔍 **Debug Logging**
-```javascript
-// Comprehensive logging throughout application
-console.log('📧 Queuing approval emails...')
-console.log('✅ Registration approved!')
-console.log('📅 Loading events for 2025...')
-```
-
-## 🛡️ Security & Best Practices
-
-### 🔐 **Security Measures**
-- **Environment Variables**: No hardcoded secrets
-- **API Key Restrictions**: Domain and API limitations
-- **Firestore Rules**: Controlled data access
-- **HTTPS Only**: Secure communication
-- **Input Validation**: XSS and injection prevention
-
-### 📋 **Best Practices Implemented**
-- **React Hooks**: Modern state management
-- **Error Boundaries**: Graceful error handling
-- **Loading States**: User experience optimization
-- **Responsive Design**: Mobile-first approach
-- **Accessibility**: Screen reader support
-
-### 🔄 **Data Flow Security**
-```
-User Input → Validation → Firebase → Google APIs → Apps Script → Email
-     ↓           ↓            ↓           ↓            ↓         ↓
-  Sanitized → Validated → Secured → Restricted → Audited → Delivered
-```
-
-## 📚 Additional Resources
-
-### 🔗 **External Documentation**
-- [Firebase Documentation](https://firebase.google.com/docs)
-- [Google Sheets API](https://developers.google.com/sheets/api)
-- [Google Calendar API](https://developers.google.com/calendar/api)
-- [Material-UI Documentation](https://mui.com/material-ui/)
-- [React Documentation](https://react.dev/)
-
-### 🎯 **Project-Specific Files**
-- `google-apps-script-email.js` - Apps Script email automation code
-- `setup-env.sh` - Environment setup script
-- `firebase.json` - Firebase project configuration
-- `firestore.rules` - Database security rules
-
-### 📧 **Support Contacts**
-- **Technical Issues**: Contact system administrator
-- **Access Requests**: Email troop468.system@gmail.com
-- **Feature Requests**: Submit via project repository
+1. **Check Documentation** - Review relevant guide above
+2. **Run Diagnostics** - Use `./deploy.sh --help` for deployment options
+3. **Test Environment** - Run `npm run test:all` to verify setup
+4. **Check Logs** - Review browser console and Firebase logs
 
 ---
 
-## 🎉 Summary
-
-The Troop 468 Management System is a comprehensive, production-ready application that successfully combines:
-
-✅ **Modern Web Technologies** - React, Firebase, Material-UI
-✅ **Google Workspace Integration** - Sheets, Calendar, Gmail
-✅ **Professional Email System** - Automated Apps Script workflow  
-✅ **Secure Authentication** - Firebase Auth with role management
-✅ **Responsive Design** - Mobile-friendly Material-UI interface
-✅ **Team Collaboration** - Environment variables and documentation
-✅ **Zero Cost Operation** - Free tier services for all components
-
-**Ready for production use with professional email automation!** 🚀📧
-
-For questions or support, contact the development team or refer to the troubleshooting section above.
-- **📅 Monthly View**: Compact calendar with event indicators
-- **📝 Event Details**: Master-detail layout with event information
-- **📱 Multi-day Events**: Proper date range display and selection
-- **📥 Calendar Export**: ICS file download for import to other calendars
-- **🔄 Automatic Sync**: Real-time event loading from Google Calendar
-
-### 🗓️ **Calendar Display Logic**
-```javascript
-// Event types handled:
-- All-day events: Date-only strings parsed as local dates
-- Timed events: Full datetime with timezone handling  
-- Multi-day events: Proper range calculation and display
-- Cross-month events: Shown in both affected months
-```
-
-### 📱 **Import Instructions**
-**For Google Calendar:**
-1. Download ICS file from app
-2. Open Google Calendar
-3. Click "+" next to "Other calendars"
-4. Select "Import" → Choose downloaded file
-
-**For Outlook/Apple Mail:**
-- Double-click downloaded ICS file
-
-## 👥 User Management & Authentication
-
-### 🔐 **Authentication Flow**
-
-**Registration Process:**
-1. **User fills registration form** (Scout + Parents)
-2. **Request stored in Firestore** with "pending" status
-3. **Admin reviews** in Users page
-4. **Approval triggers**:
-   - Email queue populated for all recipients
-   - Invitation tokens created
-   - Apps Script sends invitation emails
-5. **Users click email links** to set up accounts
-6. **Account creation** completes onboarding
-
-### 👨‍💼 **User Roles**
-- **Admin**: Full system access, user management
-- **User**: Basic access (placeholder for future features)
-- **Scout/Parent**: Role metadata for permissions
-
-### 📝 **Registration Form Features**
-- **👨‍🎓 Scout Information**: Name, preferred name, phone, email
-- **👨‍👩‍👧‍👦 Parent Information**: Optional father/mother with toggle switches
-- **🏠 Address Information**: Physical address
-- **📅 Dates**: Date joined (not current rank)
-- **🎨 Visual Design**: Color-coded sections with icons
-- **✅ Smart Validation**: Email format, required fields
-
-## 🏢 Organization Management
-
-### 📊 **Hierarchy Structure**
-```
-Committee Chair (Top)
-├── Vice Committee Chair
-│   ├── Advancement Chair
-│   ├── Camping Chair  
-│   ├── Equipment Chair
-│   ├── Event Chair
-│   ├── Finance Chair
-│   ├── Fundraising Chair
-│   ├── Popcorn Chair
-│   ├── Secretary
-│   ├── Media Chair
-│   ├── System Admins
-│   └── Advisors
-└── Scout Master
-    ├── Assistant Scout Masters (by patrol)
-    │   ├── Eagles Patrol
-    │   └── Hawks Patrol
-    ├── Merit Badge
-    ├── Presidential Award
-    ├── NHPA
-    └── Scoutbook
-```
-
-### 🎯 **Position Management**
-- **📋 Interactive Cards**: Click to assign people
-- **👥 Multiple Assignments**: Multiple people per position
-- **🎪 Patrol Grouping**: Assistant Scoutmasters by patrol
-- **🎨 Color Coding**: Visual distinction of roles
-- **🔗 Connection Lines**: Clear reporting relationships
-
-## 📊 Contact Management
-
-### 📋 **Google Sheets Integration**
-
-**Supported Headers:**
-```
-L.Name, F.Name, Rank, Troop Job, 
-"Main Phone# (to contact Scout)", Scout's E-Mail Address,
-Father, Father's E-Mail Address, Father's phone,
-Mother, Mother's E-Mail Address, Mother's phone,
-Address, Date to Join, DOB
-```
-
-**Data Processing:**
-- ✅ **Header Normalization**: Flexible header matching
-- ✅ **Empty Row Filtering**: Skips rows without key data
-- ✅ **Email Validation**: Format checking for all email fields
-- ✅ **Real-time Sync**: "Sync" button for latest data
-
-### 🔍 **Contact Display**
-- **📱 Card Layout**: Clean, organized contact cards
-- **🔍 Search Functionality**: Real-time contact filtering
-- **📞 Complete Information**: All 15 fields displayed
-- **🔄 Sync Status**: Visual feedback for data updates
-
-## 🚀 Deployment
-
-### 🔥 **Firebase Hosting**
-```bash
-# Build and deploy
-npm run build
-firebase deploy --only hosting
-
-# Hosting URL: https://troop-468.web.app
-```
-
-### 📊 **Build Process**
-- ✅ **Environment Variables**: Automatically included in build
-- ✅ **Asset Optimization**: Minified JS/CSS
-- ✅ **Progressive Web App**: Offline capabilities
-- ✅ **Fast Loading**: Optimized bundle sizes
-
-### 🌐 **Production Configuration**
-- **✅ HTTPS**: Automatic SSL certificates
-- **✅ CDN**: Global content delivery
-- **✅ Caching**: Optimized asset caching
-- **✅ Custom Domain**: Can be configured
-
-## 🧪 Development
-
-### 🛠️ **Local Development**
-```bash
-# Development server
-npm start
-
-# Open http://localhost:3000
-# Hot reloading enabled
-# DevTools integration
-```
-
-### 🔧 **Code Structure**
-```
-src/
-├── components/         # Reusable UI components
-│   ├── Header.js      # Top navigation bar
-│   ├── Sidebar.js     # Left navigation menu
-│   └── RegistrationForm.js  # Registration form
-├── pages/             # Route components
-│   ├── Dashboard.js   # Main dashboard
-│   ├── Calendar.js    # Calendar integration
-│   ├── Users.js       # User management
-│   ├── Organization.js # Org chart
-│   └── ContactList.js # Contact management
-├── services/          # API and business logic
-│   ├── authService.js # Firebase Auth
-│   ├── googleSheetsService.js # Sheets API
-│   ├── googleCalendarService.js # Calendar API
-│   └── emailQueueService.js # Email system
-└── App.js            # Main app component
-```
-
-### 🎨 **Styling Guidelines**
-- **Material-UI Components**: Consistent design system
-- **5px Border Radius**: Global theme setting
-- **Soft Pastel Colors**: Professional, approachable design
-- **Responsive Layout**: Mobile-first approach
-- **Accessibility**: WCAG compliance
-
-## 🔍 Troubleshooting
-
-### ❌ **Common Issues**
-
-**Firebase Connection Issues:**
-```bash
-# Check Firebase config
-console.log(process.env.REACT_APP_FIREBASE_PROJECT_ID)
-
-# Verify Firestore rules allow access
-# Check Firebase Console for errors
-```
-
-**Google Sheets API Issues:**
-```bash
-# Verify API key in Google Cloud Console
-# Check Sheet ID is correct: 1sQWCTzOJ8irH0zq5AzQykw8UbfovcjEtRVdYI9XA2q8
-# Ensure sheet is publicly accessible or shared properly
-```
-
-**Email System Issues:**
-```bash
-# Check Google Apps Script logs
-# Verify EmailQueue sheet exists and has correct headers
-# Confirm Gmail sending permissions granted
-```
-
-**Calendar Integration Issues:**
-```bash
-# Verify calendar is public or accessible via API key
-# Check Google Calendar API is enabled
-# Confirm calendar ID: troop468.system@gmail.com
-```
-
-### 📊 **Debug Information**
-- **Browser Console**: Frontend error messages
-- **Firebase Console**: Backend logs and data
-- **Google Apps Script**: Email processing logs
-- **Network Tab**: API request/response details
-
-### 🔧 **Development Tools**
-- **React DevTools**: Component inspection
-- **Firebase Emulator**: Local testing
-- **Postman**: API testing
-- **Chrome DevTools**: Performance profiling
-
-## 📈 Monitoring & Analytics
-
-### 📊 **System Monitoring**
-- **Registration Requests**: Track pending/approved/rejected
-- **Email Delivery**: Monitor success/failure rates
-- **User Activity**: Login patterns and feature usage
-- **API Usage**: Google Sheets/Calendar API calls
-
-### 📧 **Email Tracking**
-```javascript
-// Email queue status monitoring
-PENDING: Waiting to be sent
-SENT: Successfully delivered  
-FAILED: Delivery error occurred
-```
-
-### 🔍 **Debug Logging**
-```javascript
-// Comprehensive logging throughout application
-console.log('📧 Queuing approval emails...')
-console.log('✅ Registration approved!')
-console.log('📅 Loading events for 2025...')
-```
-
-## 🛡️ Security & Best Practices
-
-### 🔐 **Security Measures**
-- **Environment Variables**: No hardcoded secrets
-- **API Key Restrictions**: Domain and API limitations
-- **Firestore Rules**: Controlled data access
-- **HTTPS Only**: Secure communication
-- **Input Validation**: XSS and injection prevention
-
-### 📋 **Best Practices Implemented**
-- **React Hooks**: Modern state management
-- **Error Boundaries**: Graceful error handling
-- **Loading States**: User experience optimization
-- **Responsive Design**: Mobile-first approach
-- **Accessibility**: Screen reader support
-
-### 🔄 **Data Flow Security**
-```
-User Input → Validation → Firebase → Google APIs → Apps Script → Email
-     ↓           ↓            ↓           ↓            ↓         ↓
-  Sanitized → Validated → Secured → Restricted → Audited → Delivered
-```
-
-## 📚 Additional Resources
-
-### 🔗 **External Documentation**
-- [Firebase Documentation](https://firebase.google.com/docs)
-- [Google Sheets API](https://developers.google.com/sheets/api)
-- [Google Calendar API](https://developers.google.com/calendar/api)
-- [Material-UI Documentation](https://mui.com/material-ui/)
-- [React Documentation](https://react.dev/)
-
-### 🎯 **Project-Specific Files**
-- `google-apps-script-email.js` - Apps Script email automation code
-- `setup-env.sh` - Environment setup script
-- `firebase.json` - Firebase project configuration
-- `firestore.rules` - Database security rules
-
-### 📧 **Support Contacts**
-- **Technical Issues**: Contact system administrator
-- **Access Requests**: Email troop468.system@gmail.com
-- **Feature Requests**: Submit via project repository
-
----
-
-## 🎉 Summary
-
-The Troop 468 Management System is a comprehensive, production-ready application that successfully combines:
-
-✅ **Modern Web Technologies** - React, Firebase, Material-UI
-✅ **Google Workspace Integration** - Sheets, Calendar, Gmail
-✅ **Professional Email System** - Automated Apps Script workflow  
-✅ **Secure Authentication** - Firebase Auth with role management
-✅ **Responsive Design** - Mobile-friendly Material-UI interface
-✅ **Team Collaboration** - Environment variables and documentation
-✅ **Zero Cost Operation** - Free tier services for all components
-
-**Ready for production use with professional email automation!** 🚀📧
-
-For questions or support, contact the development team or refer to the troubleshooting section above.
-For issues and questions:
-1. Check the troubleshooting section
-2. Review server logs
-3. Open an issue in the repository
+**Ready to start?** Run `npm run dev:skip-tests` and visit `http://localhost:3030`
