@@ -58,9 +58,7 @@ const ResetPassword = () => {
   const [codeValid, setCodeValid] = useState(false);
   const [resetType, setResetType] = useState(''); // 'firebase', 'newUser', or 'accountSetup'
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [isGmailUser, setIsGmailUser] = useState(false);
-  const [showGoogleLogin, setShowGoogleLogin] = useState(false);
-  const [isAccountSetup, setIsAccountSetup] = useState(false); // For Gmail users, hide password form initially
+  // Removed unused state variables to fix ESLint warnings
 
   // Helper function to detect Gmail addresses
   const isGmailAddress = (email) => {
@@ -111,7 +109,6 @@ const ResetPassword = () => {
         // Check if this is the new account setup flow
         const currentPath = window.location.pathname;
         const isAccountSetupFlow = currentPath === '/account-setup';
-        setIsAccountSetup(isAccountSetupFlow);
         
         console.log('🔍 DEBUG: Current path:', currentPath);
         console.log('🔍 DEBUG: Is account setup flow:', isAccountSetupFlow);
@@ -122,7 +119,6 @@ const ResetPassword = () => {
           // New account setup flow from invitation email
           console.log('🔍 Validating account setup token for:', urlEmail);
           setEmail(urlEmail);
-          setIsGmailUser(isGmailAddress(urlEmail));
           
           // Validate the token
           const result = await authService.validateNewUserToken(urlEmail, token);
@@ -132,7 +128,8 @@ const ResetPassword = () => {
             
             // For Gmail users, show Google login option first
             if (isGmailAddress(urlEmail)) {
-              setShowGoogleLogin(true);
+              // Gmail users can use Google login
+              setShowPasswordForm(true);
             } else {
               setShowPasswordForm(true);
             }
