@@ -1,0 +1,412 @@
+/**
+ * Tests for Users Page Component
+ * Focuses on Edit User functionality and user management
+ */
+
+import React from 'react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { renderWithProviders, mockFetchSuccess, mockFetchError, mockUser } from '../../../testing/testUtils';
+import Users from '../Users';
+import authService from '../../services/authService';
+
+// Mock Firebase first
+jest.mock('firebase/auth', () => ({
+  getAuth: jest.fn(() => ({})),
+  onAuthStateChanged: jest.fn(),
+  signOut: jest.fn()
+}));
+
+jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(() => ({})),
+  collection: jest.fn(),
+  doc: jest.fn(),
+  getDoc: jest.fn(),
+  getDocs: jest.fn(),
+  setDoc: jest.fn(),
+  updateDoc: jest.fn(),
+  deleteDoc: jest.fn(),
+  query: jest.fn(),
+  where: jest.fn(),
+  orderBy: jest.fn()
+}));
+
+jest.mock('../../firebase', () => ({
+  auth: {},
+  db: {}
+}));
+
+// Mock the services
+jest.mock('../../services/authService');
+jest.mock('../../services/patrolService');
+
+// Mock react-router-dom hooks
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+  useParams: () => ({ tab: 'authorized' }),
+  useSearchParams: () => [new URLSearchParams(), jest.fn()]
+}));
+
+// Mock user data for testing
+const mockUsers = [
+  {
+    id: 'user1',
+    firstName: 'Carter',
+    lastName: 'Chang', 
+    displayName: 'Carter Chang',
+    email: 'jch2002@gmail.com',
+    phone: '4083455888',
+    dob: '2011-11-10',
+    address: '123 Main St',
+    roles: ['scout'],
+    patrol: 'Dragons',
+    accessStatus: 'approved'
+  },
+  {
+    id: 'user2',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+    roles: ['parent'],
+    accessStatus: 'approved'
+  }
+];
+
+describe('Users Page - Edit User Functionality', () => {
+  beforeEach(() => {
+    // Reset all mocks
+    jest.clearAllMocks();
+    
+    // Mock authService methods
+    authService.getAuthorizedUsers = jest.fn().mockResolvedValue(mockUsers);
+    authService.getPendingRequests = jest.fn().mockResolvedValue([]);
+    authService.updateUserProfile = jest.fn().mockResolvedValue({ success: true });
+    
+    // Mock console methods to avoid noise in tests
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const renderUsersPage = () => {
+    return renderWithProviders(<Users />);
+  };
+
+  describe('Edit User Dialog', () => {
+    it('should open edit dialog when edit button is clicked', async () => {
+      renderUsersPage();
+      
+      // Wait for users to load
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      // Find and click edit button for Carter Chang
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      // Check if edit dialog opened
+      await waitFor(() => {
+        expect(screen.getByText('Edit User')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Chang')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('jch2002@gmail.com')).toBeInTheDocument();
+      });
+    });
+
+    it('should populate form fields with user data', async () => {
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        // Check all form fields are populated
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Chang')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Carter Chang')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('jch2002@gmail.com')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('4083455888')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('2011-11-10')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('123 Main St')).toBeInTheDocument();
+      });
+    });
+
+    it('should allow editing form fields', async () => {
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+      });
+
+      // Edit the first name field
+      const firstNameField = screen.getByDisplayValue('Carter');
+      fireEvent.change(firstNameField, { target: { value: 'Carter Jr' } });
+
+      // Check if the field updated
+      expect(screen.getByDisplayValue('Carter Jr')).toBeInTheDocument();
+
+      // Edit the phone field
+      const phoneField = screen.getByDisplayValue('4083455888');
+      fireEvent.change(phoneField, { target: { value: '5551234567' } });
+
+      expect(screen.getByDisplayValue('5551234567')).toBeInTheDocument();
+    });
+
+    it('should save changes when Save Changes button is clicked', async () => {
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+      });
+
+      // Edit some fields
+      const firstNameField = screen.getByDisplayValue('Carter');
+      fireEvent.change(firstNameField, { target: { value: 'Carter Jr' } });
+
+      const phoneField = screen.getByDisplayValue('4083455888');
+      fireEvent.change(phoneField, { target: { value: '5551234567' } });
+
+      // Click Save Changes
+      const saveButton = screen.getByText('Save Changes');
+      fireEvent.click(saveButton);
+
+      // Verify authService.updateUserProfile was called with correct data
+      await waitFor(() => {
+        expect(authService.updateUserProfile).toHaveBeenCalledWith('user1', {
+          firstName: 'Carter Jr',
+          lastName: 'Chang',
+          displayName: 'Carter Chang',
+          email: 'jch2002@gmail.com',
+          phone: '5551234567',
+          dob: '2011-11-10',
+          address: '123 Main St'
+        });
+      });
+
+      // Check that dialog closed
+      await waitFor(() => {
+        expect(screen.queryByText('Edit User')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should handle save errors gracefully', async () => {
+      // Mock updateUserProfile to fail
+      authService.updateUserProfile = jest.fn().mockRejectedValue(new Error('Update failed'));
+      
+      // Mock window.alert
+      window.alert = jest.fn();
+
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+      });
+
+      // Click Save Changes
+      const saveButton = screen.getByText('Save Changes');
+      fireEvent.click(saveButton);
+
+      // Wait for error handling
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith('Error updating user. Please try again.');
+      });
+
+      // Dialog should still be open on error
+      expect(screen.getByText('Edit User')).toBeInTheDocument();
+    });
+
+    it('should show loading state during save', async () => {
+      // Mock updateUserProfile with delay
+      authService.updateUserProfile = jest.fn().mockImplementation(() => 
+        new Promise(resolve => setTimeout(() => resolve({ success: true }), 100))
+      );
+
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+      });
+
+      // Click Save Changes
+      const saveButton = screen.getByText('Save Changes');
+      fireEvent.click(saveButton);
+
+      // Check loading state
+      await waitFor(() => {
+        expect(screen.getByText('Saving...')).toBeInTheDocument();
+      });
+
+      // Wait for save to complete
+      await waitFor(() => {
+        expect(screen.queryByText('Edit User')).not.toBeInTheDocument();
+      }, { timeout: 2000 });
+    });
+
+    it('should close dialog when Cancel is clicked', async () => {
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText('Edit User')).toBeInTheDocument();
+      });
+
+      // Click Cancel
+      const cancelButton = screen.getByText('Cancel');
+      fireEvent.click(cancelButton);
+
+      // Check that dialog closed
+      await waitFor(() => {
+        expect(screen.queryByText('Edit User')).not.toBeInTheDocument();
+      });
+
+      // Verify no save was attempted
+      expect(authService.updateUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('should handle users without optional fields', async () => {
+      // Mock user with minimal data
+      const minimalUser = {
+        id: 'user3',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane@example.com',
+        roles: ['parent'],
+        accessStatus: 'approved'
+      };
+
+      authService.getAuthorizedUsers = jest.fn().mockResolvedValue([minimalUser]);
+
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText('Edit User')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Jane')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Smith')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('jane@example.com')).toBeInTheDocument();
+      });
+
+      // Fields without data should be empty
+      const phoneField = screen.getByLabelText(/phone/i);
+      expect(phoneField.value).toBe('');
+    });
+
+    it('should refresh user list after successful save', async () => {
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      // Clear the initial call
+      authService.getAuthorizedUsers.mockClear();
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+      });
+
+      // Click Save Changes
+      const saveButton = screen.getByText('Save Changes');
+      fireEvent.click(saveButton);
+
+      // Verify user list was refreshed
+      await waitFor(() => {
+        expect(authService.getAuthorizedUsers).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Form Validation', () => {
+    it('should handle empty required fields gracefully', async () => {
+      renderUsersPage();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Carter Chang')).toBeInTheDocument();
+      });
+
+      const editButtons = screen.getAllByLabelText(/edit/i);
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Carter')).toBeInTheDocument();
+      });
+
+      // Clear required fields
+      const firstNameField = screen.getByDisplayValue('Carter');
+      fireEvent.change(firstNameField, { target: { value: '' } });
+
+      const emailField = screen.getByDisplayValue('jch2002@gmail.com');
+      fireEvent.change(emailField, { target: { value: '' } });
+
+      // Click Save Changes
+      const saveButton = screen.getByText('Save Changes');
+      fireEvent.click(saveButton);
+
+      // Should still attempt to save (validation handled by backend)
+      await waitFor(() => {
+        expect(authService.updateUserProfile).toHaveBeenCalledWith('user1', {
+          firstName: '',
+          lastName: 'Chang',
+          displayName: 'Carter Chang',
+          email: '',
+          phone: '4083455888',
+          dob: '2011-11-10',
+          address: '123 Main St'
+        });
+      });
+    });
+  });
+});

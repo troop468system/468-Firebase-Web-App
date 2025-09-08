@@ -99,7 +99,7 @@ const generateICSContent = (events) => {
 const Calendar = () => {
   // State variables
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // const [selectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -185,9 +185,9 @@ const Calendar = () => {
   };
 
   // Check if a date has any events
-  const hasEvents = (date) => {
-    return getEventsForSelectedDate(date).length > 0;
-  };
+  // const hasEvents = (date) => {
+  //   return getEventsForSelectedDate(date).length > 0;
+  // };
 
   // Whether selected event covers the given date (day precision)
   const isDateInSelectedEvent = (date) => {
@@ -334,7 +334,7 @@ const Calendar = () => {
 
   const calendarDays = generateCalendarDays();
   const monthEvents = getEventsForMonth(currentYear, currentMonth);
-  const selectedDateEvents = getEventsForSelectedDate(selectedDate);
+  // const selectedDateEvents = getEventsForSelectedDate(selectedDate);
 
   // Event List View Component
   const EventListView = () => {

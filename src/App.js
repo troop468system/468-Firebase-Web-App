@@ -26,6 +26,7 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import SignUp from './pages/SignUp';
 import authService from './services/authService';
 
@@ -410,6 +411,16 @@ function App() {
               <Route path="/register" element={
                 <PublicRoute>
                   <Register />
+                </PublicRoute>
+              } />
+              <Route path="/reset-password" element={
+                <PublicRoute>
+                  <ResetPassword />
+                </PublicRoute>
+              } />
+              <Route path="/account-setup" element={
+                <PublicRoute>
+                  <ResetPassword />
                 </PublicRoute>
               } />
               <Route path="/signup" element={<SignUp />} />

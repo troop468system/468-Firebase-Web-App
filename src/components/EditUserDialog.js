@@ -66,14 +66,16 @@ const EditUserDialog = ({
   const availableRoles = ['admin', 'approver', 'user', 'scout', 'parent'];
   const accessStatusOptions = [
     { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' }
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'retired', label: 'Retired' }
   ];
   
   const scoutingStatusOptions = [
     { value: 'Registered', label: 'Registered' },
     { value: 'Inactive', label: 'Inactive' },
     { value: 'Dropped', label: 'Dropped' },
-    { value: 'Age out', label: 'Age out' }
+    { value: 'AgeOut', label: 'Age Out' }
   ];
 
   // Load user data when dialog opens
@@ -400,7 +402,7 @@ const EditUserDialog = ({
                     label="Status"
                     disabled={loading}
                   >
-                    {statusOptions.map(option => (
+                    {accessStatusOptions.map(option => (
                       <MenuItem key={option.value} value={option.value}>
                         {option.label}
                       </MenuItem>

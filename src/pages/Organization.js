@@ -20,11 +20,11 @@ import {
   Close as XIcon,
   CheckCircle as UserCheckIcon,
   Security as ShieldIcon,
-  Chair as ChairIcon,
+  // Chair as ChairIcon,
   School as SchoolIcon,
-  EmojiEvents as AwardIcon,
+  // EmojiEvents as AwardIcon,
   Assignment as AssignmentIcon,
-  AttachMoney as MoneyIcon,
+  // AttachMoney as MoneyIcon,
   Store as StoreIcon,
   Description as SecretaryIcon,
   Camera as MediaIcon,
@@ -34,7 +34,7 @@ import {
   Flag as PresidentialIcon,
   LocalHospital as NHPAIcon,
   MenuBook as ScoutbookIcon,
-  Gavel as GavelIcon,
+  // Gavel as GavelIcon,
   CorporateFare as CommitteeIcon,
   SupervisorAccount as ViceChairIcon,
   AccountBox as ScoutMasterIcon,
@@ -126,15 +126,15 @@ const Organization = () => {
     });
   };
 
-  const handleScoutAssignment = (position, index, person) => {
-    setScoutAssignments(prev => {
-      const next = { ...prev };
-      const list = [...(next[position] || [])];
-      list[index] = person;
-      next[position] = list;
-      return next;
-    });
-  };
+  // const handleScoutAssignment = (position, index, person) => {
+  //   setScoutAssignments(prev => {
+  //     const next = { ...prev };
+  //     const list = [...(next[position] || [])];
+  //     list[index] = person;
+  //     next[position] = list;
+  //     return next;
+  //   });
+  // };
 
   const addPersonSlot = (position) => {
     setAssignments(prev => {
@@ -146,15 +146,15 @@ const Organization = () => {
     });
   };
 
-  const addScoutPersonSlot = (position) => {
-    setScoutAssignments(prev => {
-      const next = { ...prev };
-      const list = [...(next[position] || [])];
-      list.push('');
-      next[position] = list;
-      return next;
-    });
-  };
+  // const addScoutPersonSlot = (position) => {
+  //   setScoutAssignments(prev => {
+  //     const next = { ...prev };
+  //     const list = [...(next[position] || [])];
+  //     list.push('');
+  //     next[position] = list;
+  //     return next;
+  //   });
+  // };
 
   const removePersonSlot = (position, index) => {
     setAssignments(prev => {
@@ -166,15 +166,15 @@ const Organization = () => {
     });
   };
 
-  const removeScoutPersonSlot = (position, index) => {
-    setScoutAssignments(prev => {
-      const next = { ...prev };
-      const list = [...(next[position] || [])];
-      list.splice(index, 1);
-      next[position] = list;
-      return next;
-    });
-  };
+  // const removeScoutPersonSlot = (position, index) => {
+  //   setScoutAssignments(prev => {
+  //     const next = { ...prev };
+  //     const list = [...(next[position] || [])];
+  //     list.splice(index, 1);
+  //     next[position] = list;
+  //     return next;
+  //   });
+  // };
 
   const addPatrolAssignment = () => {
     if (newPatrolAssignment.patrol && newPatrolAssignment.person) {

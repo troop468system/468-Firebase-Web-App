@@ -156,130 +156,116 @@ const PendingRequestsTab = React.memo(({ pendingRequests, onApprove, onReject })
     return age.toString();
   };
 
+  // Group pending users by family
+  const familyGroups = pendingRequests.reduce((groups, user) => {
+    const familyId = user.familyId || 'individual';
+    if (!groups[familyId]) {
+      groups[familyId] = [];
+    }
+    groups[familyId].push(user);
+    return groups;
+  }, {});
+
   return (
     <Box>
       {pendingRequests.length === 0 ? (
-        <Alert severity="info">No pending registration requests.</Alert>
+        <Alert severity="info">No pending user approvals.</Alert>
       ) : (
         <Grid container spacing={3}>
-          {pendingRequests.map(request => (
-            <Grid item xs={12} key={request.id}>
-              <Card sx={{ border: '2px solid #f0f0f0' }}>
-                <CardContent>
-                  {/* Header with Scout Information */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-                    <Box>
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                        {request.scoutPreferredName || `${request.scoutFirstName} ${request.scoutLastName}`}
-                      </Typography>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Registration Request
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Submitted: {request.createdAt ? new Date(request.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown'}
-                      </Typography>
+          {Object.entries(familyGroups).map(([familyId, familyUsers]) => {
+            const scout = familyUsers.find(user => user.roles?.includes('scout'));
+            const parents = familyUsers.filter(user => user.roles?.includes('parent'));
+            
+            return (
+              <Grid item xs={12} key={familyId}>
+                <Card sx={{ border: '2px solid #f0f0f0' }}>
+                  <CardContent>
+                    {/* Header with Scout Information */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                      <Box>
+                        <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                          {scout ? scout.displayName : familyUsers[0].displayName}
+                        </Typography>
+                        <Typography variant="subtitle1" color="text.secondary">
+                          {familyUsers.length > 1 ? `Family Registration (${familyUsers.length} users)` : 'User Registration'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Submitted: {scout?.createdAt ? new Date(scout.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          startIcon={<CheckIcon />}
+                          onClick={() => {
+                            // Approve all users in the family
+                            familyUsers.forEach(user => onApprove(user));
+                          }}
+                          size="large"
+                        >
+                          Approve Family
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<CloseIcon />}
+                          onClick={() => {
+                            // Reject all users in the family
+                            familyUsers.forEach(user => onReject(user));
+                          }}
+                          size="large"
+                        >
+                          Reject Family
+                        </Button>
+                      </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<CheckIcon />}
-                        onClick={() => onApprove(request)}
-                        size="large"
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<CloseIcon />}
-                        onClick={() => onReject(request)}
-                        size="large"
-                      >
-                        Reject
-                      </Button>
-                    </Box>
-                  </Box>
 
                   <Divider sx={{ mb: 3 }} />
 
                   {/* Family Information Grid */}
                   <Grid container spacing={3}>
                     {/* Scout Information */}
-                    <Grid item xs={12} md={4}>
-                      <Card variant="outlined" sx={{ height: '100%', backgroundColor: '#e3f2fd' }}>
-                        <CardContent>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <PersonIcon sx={{ mr: 1, color: '#1976d2' }} />
-                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Scout</Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">Name:</Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                                {request.scoutFirstName} {request.scoutLastName}
-                              </Typography>
-                            </Box>
-                            {request.scoutPreferredName && (
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">Preferred First Name:</Typography>
-                                <Typography variant="body1">{request.scoutPreferredName}</Typography>
-                              </Box>
-                            )}
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">Email:</Typography>
-                              <Typography variant="body1">{request.scoutEmail}</Typography>
-                            </Box>
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">Phone:</Typography>
-                              <Typography variant="body1">{request.scoutPhone || '—'}</Typography>
-                            </Box>
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">Date of Birth:</Typography>
-                              <Typography variant="body1">
-                                {request.scoutDOB ? `${new Date(request.scoutDOB).toLocaleDateString()} (Age: ${computeAge(request.scoutDOB)})` : '—'}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">Date to Join:</Typography>
-                              <Typography variant="body1">
-                                {request.dateToJoin ? new Date(request.dateToJoin).toLocaleDateString() : '—'}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-
-                    {/* Father Information */}
-                    {request.includeFather && request.fatherEmail && (
+                    {scout && (
                       <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ height: '100%', backgroundColor: '#e8f5e8' }}>
+                        <Card variant="outlined" sx={{ height: '100%', backgroundColor: '#e3f2fd' }}>
                           <CardContent>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                              <PersonIcon sx={{ mr: 1, color: '#388e3c' }} />
-                              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Father</Typography>
+                              <PersonIcon sx={{ mr: 1, color: '#1976d2' }} />
+                              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Scout</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                               <Box>
                                 <Typography variant="body2" color="text.secondary">Name:</Typography>
                                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                                  {request.fatherFirstName} {request.fatherLastName}
+                                  {scout.firstName} {scout.lastName}
                                 </Typography>
                               </Box>
-                              {request.fatherPreferredName && (
+                              {scout.displayName && scout.displayName !== `${scout.firstName} ${scout.lastName}` && (
                                 <Box>
-                                  <Typography variant="body2" color="text.secondary">Preferred First Name:</Typography>
-                                  <Typography variant="body1">{request.fatherPreferredName}</Typography>
+                                  <Typography variant="body2" color="text.secondary">Display Name:</Typography>
+                                  <Typography variant="body1">{scout.displayName}</Typography>
                                 </Box>
                               )}
                               <Box>
                                 <Typography variant="body2" color="text.secondary">Email:</Typography>
-                                <Typography variant="body1">{request.fatherEmail}</Typography>
+                                <Typography variant="body1">{scout.email}</Typography>
                               </Box>
                               <Box>
                                 <Typography variant="body2" color="text.secondary">Phone:</Typography>
-                                <Typography variant="body1">{request.fatherPhone || '—'}</Typography>
+                                <Typography variant="body1">{scout.phone || '—'}</Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">Date of Birth:</Typography>
+                                <Typography variant="body1">
+                                  {scout.dob ? `${new Date(scout.dob).toLocaleDateString()} (Age: ${computeAge(scout.dob)})` : '—'}
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">Address:</Typography>
+                                <Typography variant="body1">
+                                  {scout.address || '—'}
+                                </Typography>
                               </Box>
                             </Box>
                           </CardContent>
@@ -287,41 +273,43 @@ const PendingRequestsTab = React.memo(({ pendingRequests, onApprove, onReject })
                       </Grid>
                     )}
 
-                    {/* Mother Information */}
-                    {request.includeMother && request.motherEmail && (
-                      <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ height: '100%', backgroundColor: '#fce4ec' }}>
+                    {/* Parent Information */}
+                    {parents.map((parent, index) => (
+                      <Grid item xs={12} md={4} key={parent.id}>
+                        <Card variant="outlined" sx={{ height: '100%', backgroundColor: parent.relation === 'father' ? '#e8f5e8' : '#fce4ec' }}>
                           <CardContent>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                              <PersonIcon sx={{ mr: 1, color: '#c2185b' }} />
-                              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Mother</Typography>
+                              <PersonIcon sx={{ mr: 1, color: parent.relation === 'father' ? '#388e3c' : '#c2185b' }} />
+                              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                                {parent.relation === 'father' ? 'Father' : parent.relation === 'mother' ? 'Mother' : 'Parent'}
+                              </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                               <Box>
                                 <Typography variant="body2" color="text.secondary">Name:</Typography>
                                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                                  {request.motherFirstName} {request.motherLastName}
+                                  {parent.firstName} {parent.lastName}
                                 </Typography>
                               </Box>
-                              {request.motherPreferredName && (
+                              {parent.displayName && parent.displayName !== `${parent.firstName} ${parent.lastName}` && (
                                 <Box>
-                                  <Typography variant="body2" color="text.secondary">Preferred First Name:</Typography>
-                                  <Typography variant="body1">{request.motherPreferredName}</Typography>
+                                  <Typography variant="body2" color="text.secondary">Display Name:</Typography>
+                                  <Typography variant="body1">{parent.displayName}</Typography>
                                 </Box>
                               )}
                               <Box>
                                 <Typography variant="body2" color="text.secondary">Email:</Typography>
-                                <Typography variant="body1">{request.motherEmail}</Typography>
+                                <Typography variant="body1">{parent.email}</Typography>
                               </Box>
                               <Box>
                                 <Typography variant="body2" color="text.secondary">Phone:</Typography>
-                                <Typography variant="body1">{request.motherPhone || '—'}</Typography>
+                                <Typography variant="body1">{parent.phone || '—'}</Typography>
                               </Box>
                             </Box>
                           </CardContent>
                         </Card>
                       </Grid>
-                    )}
+                    ))}
 
                     {/* Address Information */}
                     <Grid item xs={12}>
@@ -332,7 +320,7 @@ const PendingRequestsTab = React.memo(({ pendingRequests, onApprove, onReject })
                             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Address</Typography>
                           </Box>
                           <Typography variant="body1">
-                            {request.address || 'No address provided'}
+                            {scout?.address || parents[0]?.address || 'No address provided'}
                           </Typography>
                         </CardContent>
                       </Card>
@@ -341,7 +329,8 @@ const PendingRequestsTab = React.memo(({ pendingRequests, onApprove, onReject })
                 </CardContent>
               </Card>
             </Grid>
-          ))}
+            );
+          })}
         </Grid>
       )}
     </Box>
@@ -782,6 +771,7 @@ const Users = () => {
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
   
   // Form states
   const [formData, setFormData] = useState({
@@ -827,16 +817,22 @@ const Users = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Load users, patrols, and pending requests
-      const [users, patrolData, pendingData] = await Promise.all([
+      // Load users and patrols (no more separate registrationRequests)
+      const [users, patrolData] = await Promise.all([
         authService.getAllUsers(),
-        patrolService.getPatrols(),
-        authService.getPendingRegistrationRequests()
+        patrolService.getPatrols()
       ]);
-      setAuthorizedUsers(users || []);
+      
+      // Filter users by status
+      const allUsers = users || [];
+      const approvedUsers = allUsers.filter(user => user.accessStatus === 'approved');
+      const pendingUsers = allUsers.filter(user => user.accessStatus === 'pending');
+      
+      setAuthorizedUsers(approvedUsers);
+      setPendingRequests(pendingUsers);
+      
       setPatrols(patrolData || []);
       setPatrolNames((patrolData || []).map(p => p.name));
-      setPendingRequests(pendingData || []);
     } catch (e) {
       console.error('Failed to load data', e);
     } finally {
@@ -844,12 +840,18 @@ const Users = () => {
     }
   };
 
-  const loadAuthorizedUsers = async () => {
+  const refreshUserData = async () => {
     try {
       const users = await authService.getAllUsers();
-      setAuthorizedUsers(users || []);
+      const allUsers = users || [];
+      // Properly filter users by status
+      const approvedUsers = allUsers.filter(user => user.accessStatus === 'approved');
+      const pendingUsers = allUsers.filter(user => user.accessStatus === 'pending');
+      
+      setAuthorizedUsers(approvedUsers);
+      setPendingRequests(pendingUsers);
     } catch (e) {
-      console.error('Failed to load authorized users', e);
+      console.error('Failed to refresh user data', e);
     }
   };
 
@@ -964,14 +966,58 @@ const Users = () => {
 
 
   const handleEditUser = (user) => {
+    console.log('📝 Opening edit dialog for user:', user);
     setEditingUser(user);
+    setEditFormData({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      displayName: user.displayName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      dob: user.dob || '',
+      address: user.address || ''
+    });
     setShowEditUserDialog(true);
+  };
+
+  const handleSaveUser = async () => {
+    if (!editingUser) return;
+    
+    try {
+      setLoading(true);
+      
+      console.log('🔄 Saving user changes...', {
+        userId: editingUser.id,
+        formData: editFormData
+      });
+      
+      // Update user profile with form data
+      await authService.updateUserProfile(editingUser.id, editFormData);
+      
+      console.log('✅ User updated successfully');
+      
+      // Refresh the user list
+      await refreshUserData();
+      
+      // Close dialog and reset form
+      setShowEditUserDialog(false);
+      setEditingUser(null);
+      setEditFormData({});
+      
+      console.log('✅ Dialog closed and data refreshed');
+      
+    } catch (error) {
+      console.error('❌ Error updating user:', error);
+      alert('Error updating user. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleScoutingStatusChange = async (userId, newScoutingStatus) => {
     try {
       await authService.updateUserProfile(userId, { scoutingStatus: newScoutingStatus });
-      await loadAuthorizedUsers(); // Refresh the list
+      await refreshUserData(); // Refresh the list
     } catch (error) {
       console.error('Error updating user scouting status:', error);
       alert('Error updating user scouting status. Please try again.');
@@ -997,51 +1043,65 @@ const Users = () => {
         await Promise.all(parentUpdates);
       }
 
-      await loadAuthorizedUsers(); // Refresh the list
+      await refreshUserData(); // Refresh the list
     } catch (error) {
       console.error('Error updating user patrol:', error);
       alert('Error updating user patrol. Please try again.');
     }
   };
 
-  const handleApproveRequest = async (request) => {
+  const handleApproveRequest = async (user) => {
     try {
       setLoading(true);
-      console.log('Approving registration request:', request.id);
+      console.log('Approving user:', user.id);
       
-      // Approve the registration request
-      await authService.approveRegistrationRequest(request.id);
+      // Update user status to approved
+      await authService.updateUserProfile(user.id, { accessStatus: 'approved' });
       
-      // Reload both pending requests and authorized users
+      // Send invitation email for account setup
+      try {
+        await authService.sendNewUserInvitation(user.email);
+        console.log('✅ Invitation email sent to:', user.email);
+      } catch (emailError) {
+        console.warn('⚠️ User approved but invitation email failed:', emailError);
+        alert(`User approved successfully, but invitation email failed. Please notify ${user.email} manually.`);
+      }
+      
+      // Reload data to reflect changes
       await loadData();
       
-      console.log('Registration request approved successfully');
+      console.log('User approved successfully');
     } catch (error) {
-      console.error('Error approving registration request:', error);
-      alert('Failed to approve registration request. Please try again.');
+      console.error('Error approving user:', error);
+      alert('Failed to approve user. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRejectRequest = async (request) => {
+  const handleRejectRequest = async (user) => {
     try {
       const reason = prompt('Please provide a reason for rejection (optional):');
       if (reason === null) return; // User cancelled
       
       setLoading(true);
-      console.log('Rejecting registration request:', request.id);
+      console.log('Rejecting user:', user.id);
       
-      // Reject the registration request
-      await authService.rejectRegistrationRequest(request.id, reason);
+      // Update user status to rejected
+      await authService.updateUserProfile(user.id, { 
+        accessStatus: 'rejected',
+        rejectionReason: reason,
+        rejectedAt: new Date(),
+        rejectedBy: authService.getCurrentUser()?.uid
+      });
       
-      // Reload pending requests
+      // Reload data to reflect changes
       await loadData();
       
-      console.log('Registration request rejected successfully');
+      console.log('User rejected successfully');
     } catch (error) {
-      console.error('Error rejecting registration request:', error);
-      alert('Failed to reject registration request. Please try again.');
+      console.error('Error rejecting user:', error);
+      alert('Failed to reject user. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1097,7 +1157,7 @@ const Users = () => {
       }
       
       // Refresh the user list
-      await loadAuthorizedUsers();
+      await refreshUserData();
       
       // Close dialog and reset form
       setShowAddUserDialog(false);
@@ -1388,7 +1448,7 @@ const Users = () => {
         <Alert severity="info">No authorized users found. Add users using the form above.</Alert>
       ) : (
         <Box>
-          {[...patrolNames, 'Unassigned'].filter(patrolName => selectedPatrol === 'all' || selectedPatrol === patrolName).map(patrolName => {
+          {['Unassigned', ...patrolNames].filter(patrolName => selectedPatrol === 'all' || selectedPatrol === patrolName).map(patrolName => {
             const usersInPatrol = contactsByPatrol[patrolName] || [];
             if (usersInPatrol.length === 0 && searchTerm.trim() === '' && selectedPatrol === 'all') return null;
 
@@ -1396,10 +1456,51 @@ const Users = () => {
             const sortedUsers = sortUsers(usersInPatrol);
 
             return (
-              <Card key={patrolName} sx={{ mb: 3 }}>
+              <Card 
+                key={patrolName} 
+                sx={{ 
+                  mb: 3,
+                  ...(patrolName === 'Unassigned' && {
+                    border: '2px solid #ff9800',
+                    backgroundColor: '#fff3e0',
+                    boxShadow: '0 4px 12px rgba(255, 152, 0, 0.2)'
+                  })
+                }}
+              >
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
+                  <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{
+                      ...(patrolName === 'Unassigned' && {
+                        color: '#e65100',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      })
+                    }}
+                  >
+                    {patrolName === 'Unassigned' && (
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: '#ff9800',
+                          animation: 'pulse 2s infinite'
+                        }}
+                      />
+                    )}
                     {patrolName} ({usersInPatrol.length})
+                    {patrolName === 'Unassigned' && usersInPatrol.length > 0 && (
+                      <Chip 
+                        label="Needs Assignment" 
+                        size="small" 
+                        color="warning"
+                        sx={{ ml: 1, fontWeight: 'bold' }}
+                      />
+                    )}
                   </Typography>
                   {usersInPatrol.length === 0 ? (
                     <Alert severity="info">No users in this patrol match your search.</Alert>
@@ -1503,7 +1604,7 @@ const Users = () => {
                                     <MenuItem value="Registered">Registered</MenuItem>
                                     <MenuItem value="Inactive">Inactive</MenuItem>
                                     <MenuItem value="Dropped">Dropped</MenuItem>
-                                    <MenuItem value="Age out">Age out</MenuItem>
+                                    <MenuItem value="AgeOut">Age Out</MenuItem>
                                   </Select>
                                 </TableCell>
                                 <TableCell>
@@ -1989,6 +2090,7 @@ const Users = () => {
         onClose={() => setShowEditUserDialog(false)}
         maxWidth="sm" 
         fullWidth
+        id="edit-user-dialog"
       >
         <DialogTitle>Edit User</DialogTitle>
         <DialogContent>
@@ -1999,21 +2101,24 @@ const Users = () => {
                   <TextField
                     fullWidth
                     label="First Name"
-                    defaultValue={editingUser.firstName || ''}
+                    value={editFormData.firstName || ''}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, firstName: e.target.value }))}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Last Name"
-                    defaultValue={editingUser.lastName || ''}
+                    value={editFormData.lastName || ''}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, lastName: e.target.value }))}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Preferred First Name"
-                    defaultValue={editingUser.displayName || ''}
+                    value={editFormData.displayName || ''}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, displayName: e.target.value }))}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -2021,14 +2126,16 @@ const Users = () => {
                     fullWidth
                     label="Email"
                     type="email"
-                    defaultValue={editingUser.email || ''}
+                    value={editFormData.email || ''}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Phone"
-                    defaultValue={editingUser.phone || ''}
+                    value={editFormData.phone || ''}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
                   />
                 </Grid>
                 {/* Only show birthday for scouts */}
@@ -2038,7 +2145,8 @@ const Users = () => {
                       fullWidth
                       label="Date of Birth"
                       type="date"
-                      defaultValue={editingUser.dob || ''}
+                      value={editFormData.dob || ''}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, dob: e.target.value }))}
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
@@ -2049,7 +2157,8 @@ const Users = () => {
                     <TextField
                       fullWidth
                       label="Address"
-                      defaultValue={editingUser.address || ''}
+                      value={editFormData.address || ''}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
                       multiline
                       rows={2}
                     />
@@ -2060,8 +2169,14 @@ const Users = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowEditUserDialog(false)}>Cancel</Button>
-          <Button variant="contained">Save Changes</Button>
+          <Button onClick={() => setShowEditUserDialog(false)} disabled={loading}>Cancel</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSaveUser}
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

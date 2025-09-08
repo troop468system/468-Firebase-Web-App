@@ -2,10 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
-  Typography,
   Box,
-  Button,
-  Paper
+  Button
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon

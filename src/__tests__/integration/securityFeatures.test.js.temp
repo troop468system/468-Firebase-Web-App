@@ -1,0 +1,325 @@
+// Mock Firebase before importing authService
+jest.mock('firebase/app', () => ({
+  initializeApp: jest.fn(),
+}));
+
+jest.mock('firebase/auth', () => ({
+  getAuth: jest.fn(() => ({})),
+  createUserWithEmailAndPassword: jest.fn(),
+  updateProfile: jest.fn(),
+  verifyPasswordResetCode: jest.fn(),
+  confirmPasswordReset: jest.fn(),
+}));
+
+jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(() => ({})),
+  collection: jest.fn(),
+  query: jest.fn(),
+  where: jest.fn(),
+  orderBy: jest.fn(),
+  getDocs: jest.fn(),
+  getDoc: jest.fn(),
+  doc: jest.fn(),
+  setDoc: jest.fn(),
+  updateDoc: jest.fn(),
+  serverTimestamp: jest.fn(() => 'mock-timestamp'),
+}));
+
+import authService from '../../services/authService';
+import { 
+  getDocs, 
+  getDoc,
+  setDoc, 
+  updateDoc 
+} from 'firebase/firestore';
+
+// Mock fetch for external APIs
+global.fetch = jest.fn();
+
+// Mock crypto.subtle for password hashing
+Object.defineProperty(global, 'crypto', {
+  value: {
+    subtle: {
+      digest: jest.fn(),
+    },
+    randomUUID: jest.fn(() => 'test-uuid-12345'),
+  },
+});
+
+// Mock navigator
+Object.defineProperty(global, 'navigator', {
+  value: {
+    userAgent: 'Mozilla/5.0 (Test Browser)',
+  },
+});
+
+// Mock window.location
+Object.defineProperty(global, 'window', {
+  value: {
+    location: {
+      origin: 'https://test.com',
+      href: 'https://test.com/reset-password',
+    },
+  },
+});
+
+describe('Security Features Integration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Default successful mocks
+    getDocs.mockResolvedValue({ 
+      empty: false, 
+      size: 0,
+      docs: [] 
+    });
+    getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ firebaseUid: null })
+    });
+    setDoc.mockResolvedValue();
+    updateDoc.mockResolvedValue();
+    fetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true })
+    });
+  });
+
+  describe('Password Reset Security Flow', () => {
+    test('enforces rate limiting across multiple requests', async () => {
+      // Mock rate limit exceeded
+      getDocs.mockResolvedValueOnce({
+        empty: false,
+        docs: [{ id: 'user123', data: () => ({}) }]
+      });
+      getDocs.mockResolvedValueOnce({ size: 5 }); // 5 attempts (at limit)
+
+      await expect(
+        authService.resetPassword('test@example.com')
+      ).rejects.toThrow('Too many password reset attempts');
+
+      // Should log the rate limit violation
+      expect(setDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: 'RATE_LIMIT_EXCEEDED'
+        })
+      );
+    });
+
+    test('validates email domains and blocks suspicious ones', async () => {
+      const result = await authService.validateEmailDomain('test@suspicious.tk');
+      
+      expect(result).toBe(false);
+      expect(setDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: 'SUSPICIOUS_DOMAIN_BLOCKED'
+        })
+      );
+    });
+
+    test('prevents token flooding attacks', async () => {
+      // Mock user exists
+      getDocs.mockResolvedValueOnce({
+        empty: false,
+        docs: [{ id: 'user123', data: () => ({}) }]
+      });
+      // Mock rate limit passes
+      getDocs.mockResolvedValueOnce({ size: 0 });
+      // Mock 3 existing tokens (at limit)
+      getDocs.mockResolvedValueOnce({ size: 3 });
+
+      await expect(
+        authService.resetPassword('test@example.com')
+      ).rejects.toThrow('Too many pending reset requests');
+
+      expect(setDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: 'TOKEN_FLOODING_ATTEMPT'
+        })
+      );
+    });
+  });
+
+  describe('Password Security Validation', () => {
+    test('validates password strength requirements', async () => {
+      const weakPassword = await authService.validatePasswordStrength('weak');
+      
+      expect(weakPassword.isValid).toBe(false);
+      expect(weakPassword.issues).toContain('Password must be at least 8 characters long');
+      expect(weakPassword.strength).toBe('very-weak');
+
+      const strongPassword = await authService.validatePasswordStrength('VeryStrongPassword123!@#');
+      
+      expect(strongPassword.isValid).toBe(true);
+      expect(strongPassword.issues).toHaveLength(0);
+      expect(['strong', 'medium']).toContain(strongPassword.strength);
+    });
+
+    test('detects compromised passwords using HaveIBeenPwned', async () => {
+      // Mock crypto.subtle.digest to return a specific hash
+      const mockHashArray = new Uint8Array([0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+      crypto.subtle.digest.mockResolvedValue(mockHashArray.buffer);
+      
+      // Mock HaveIBeenPwned API response with matching hash
+      fetch.mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('0102030405060708090A0B0C0D0E0F10:50000\nABCDE:1000')
+      });
+
+      const result = await authService.checkCompromisedPassword('password123');
+      
+      expect(result.isCompromised).toBe(true);
+      expect(result.breachCount).toBe(50000);
+    });
+
+    test('allows secure passwords not in breach database', async () => {
+      // Mock HaveIBeenPwned API response without our hash
+      fetch.mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('ABCDE:1000\nFGHIJ:500')
+      });
+
+      const result = await authService.checkCompromisedPassword('UniqueSecurePassword123!');
+      
+      expect(result.isCompromised).toBe(false);
+      expect(result.breachCount).toBe(0);
+    });
+  });
+
+  describe('Audit Logging and Privacy', () => {
+    test('logs security events with proper metadata', async () => {
+      await authService.logSecurityEvent('test@example.com', 'TEST_EVENT', {
+        customData: 'test'
+      });
+
+      expect(setDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          email: 'test@example.com',
+          action: 'TEST_EVENT',
+          userAgent: 'Mozilla/5.0 (Test Browser)',
+          url: 'https://test.com/reset-password',
+          metadata: { customData: 'test' }
+        })
+      );
+    });
+
+    test('hashes IP addresses for privacy compliance', async () => {
+      // Mock IP API response
+      fetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ip: '192.168.1.1' })
+      });
+
+      // Mock crypto.subtle.digest for IP hashing
+      const mockHashArray = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
+      crypto.subtle.digest.mockResolvedValueOnce(mockHashArray.buffer);
+
+      const hash = await authService.hashIP();
+      
+      expect(hash).toBe('0102030405060708');
+      expect(fetch).toHaveBeenCalledWith('https://api.ipify.org?format=json');
+    });
+
+    test('handles privacy failures gracefully', async () => {
+      fetch.mockRejectedValue(new Error('Network error'));
+
+      const hash = await authService.hashIP();
+      
+      expect(hash).toBe('unknown');
+    });
+  });
+
+  describe('Complete Security Flow Integration', () => {
+    test('password reset completion with all security checks', async () => {
+      // Mock all security validations
+      authService.validatePasswordStrength = jest.fn().mockResolvedValue({
+        isValid: true,
+        issues: [],
+        strength: 'strong'
+      });
+
+      authService.checkCompromisedPassword = jest.fn().mockResolvedValue({
+        isCompromised: false,
+        breachCount: 0
+      });
+
+      authService.validateCustomResetToken = jest.fn().mockResolvedValue({
+        valid: true,
+        userId: 'user123',
+        email: 'test@example.com'
+      });
+
+      // Mock rate limit check passes
+      getDocs.mockResolvedValueOnce({ size: 0 });
+
+      const result = await authService.completeCustomPasswordReset(
+        'valid-token',
+        'test@example.com',
+        'SecureNewPassword123!'
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.passwordStrength).toBe('strong');
+
+      // Verify all security checks were performed
+      expect(authService.validatePasswordStrength).toHaveBeenCalledWith('SecureNewPassword123!');
+      expect(authService.checkCompromisedPassword).toHaveBeenCalledWith('SecureNewPassword123!');
+      expect(authService.validateCustomResetToken).toHaveBeenCalledWith('valid-token', 'test@example.com');
+    });
+
+    test('rejects password reset with security violations', async () => {
+      // Mock weak password validation
+      authService.validatePasswordStrength = jest.fn().mockResolvedValue({
+        isValid: false,
+        issues: ['Password must be at least 8 characters long'],
+        strength: 'weak'
+      });
+
+      // Mock rate limit check passes
+      getDocs.mockResolvedValueOnce({ size: 0 });
+
+      await expect(
+        authService.completeCustomPasswordReset('token', 'test@example.com', 'weak')
+      ).rejects.toThrow('Password requirements not met');
+
+      expect(setDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: 'WEAK_PASSWORD_REJECTED'
+        })
+      );
+    });
+  });
+
+  describe('Error Handling and Resilience', () => {
+    test('handles database failures gracefully', async () => {
+      getDocs.mockRejectedValue(new Error('Database error'));
+
+      // Rate limiting should still allow request
+      const result = await authService.checkRateLimit('test@example.com');
+      
+      expect(result.allowed).toBe(true);
+    });
+
+    test('handles external API failures gracefully', async () => {
+      fetch.mockRejectedValue(new Error('Network error'));
+
+      // Password breach check should allow password
+      const result = await authService.checkCompromisedPassword('password123');
+      
+      expect(result.isCompromised).toBe(false);
+    });
+
+    test('continues operation when logging fails', async () => {
+      setDoc.mockRejectedValue(new Error('Logging failed'));
+
+      // Should not throw error
+      await expect(
+        authService.logSecurityEvent('test@example.com', 'TEST_EVENT')
+      ).resolves.not.toThrow();
+    });
+  });
+});

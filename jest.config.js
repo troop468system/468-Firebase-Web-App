@@ -16,7 +16,7 @@ module.exports = {
   
   // Modules to transform
   transformIgnorePatterns: [
-    'node_modules/(?!(react-router|@mui|other-es6-package)/)'
+    'node_modules/(?!(react-router|@mui|axios)/)'
   ],
   
   // Coverage configuration

@@ -13,6 +13,9 @@ npm run test:components     # UI components (23 tests)
 npm run test:services       # Business logic (16 tests)
 npm run test:integration    # API workflows (15 tests)
 
+# Run specialized test suites
+./testing/auth-flow-tests.sh    # Authentication flow tests
+
 # Interactive testing
 npm test
 
@@ -22,13 +25,14 @@ npm run test:coverage
 
 ## 📊 Test Overview
 
-**Current Status**: 64/64 tests passing (100% success rate)
+**Current Status**: 87/87 tests passing (100% success rate)
 
 ### Test Categories
-- **Component Tests** (23) - UI functionality and user interactions
-- **Service Tests** (16) - Business logic and data processing
+- **Component Tests** (44) - UI functionality and user interactions
+- **Service Tests** (16) - Business logic and data processing  
 - **Integration Tests** (15) - API calls and end-to-end workflows
 - **Infrastructure Tests** (10) - Test environment validation
+- **Test Suite** (2) - Testing framework validation
 
 ## 🏗️ Test Structure
 
@@ -59,8 +63,9 @@ testing/
 ### Testing Directory Structure
 ```
 testing/
-├── testUtils.js        # Shared test utilities and mock data
-└── test-runner.sh      # Comprehensive test runner script
+├── testUtils.js            # Shared test utilities and mock data
+├── test-runner.sh          # Comprehensive test runner script
+└── auth-flow-tests.sh      # Authentication flow test runner
 ```
 
 ### Shared Utilities (`testing/testUtils.js`)
@@ -84,13 +89,23 @@ global.fetch.mockResolvedValue(mockFetchError('Error message', 500));
 - **`wait(ms)`** - Async helper for timing
 - **Mock Data**: `mockUser`, `mockCalendarEvent`, `mockEmail`
 
-### Test Runner (`testing/test-runner.sh`)
+### Test Runners
+
+#### **Main Test Runner (`testing/test-runner.sh`)**
 Comprehensive test orchestrator that runs:
 - **Linting checks** - ESLint code quality
 - **Component tests** - UI functionality
 - **Service tests** - Business logic
 - **Integration tests** - API workflows
 - **Coverage analysis** - Code coverage report
+
+#### **Authentication Flow Tests (`testing/auth-flow-tests.sh`)**
+Specialized test runner for authentication workflows:
+- **Registration & Account Setup** - Complete user onboarding flow
+- **Password Reset** - Forgot password and reset workflows
+- **Login Flows** - Google OAuth and email/password authentication
+- **Token Management** - Cleanup and security validation
+- **Error Handling** - Edge cases and error scenarios
 
 ## ✍️ Writing Tests
 

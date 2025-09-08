@@ -47,7 +47,7 @@ const ContactList = () => {
   const [selectedPatrol, setSelectedPatrol] = useState('all');
   const [showParents, setShowParents] = useState(true);
   const [patrolNames, setPatrolNames] = useState([]);
-  const [patrols, setPatrols] = useState([]);
+  // const [patrols, setPatrols] = useState([]);
 
   useEffect(() => {
     loadAuthorizedUsers();
@@ -61,7 +61,7 @@ const ContactList = () => {
         patrolService.getPatrols()
       ]);
       setAuthorizedUsers(users || []);
-      setPatrols(patrolData || []);
+      // setPatrols(patrolData || []);
       setPatrolNames((patrolData || []).map(p => p.name));
     } catch (e) {
       console.error('Failed to load data', e);

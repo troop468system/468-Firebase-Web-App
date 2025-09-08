@@ -5,6 +5,9 @@ class EmailQueueService {
     this.emailQueueSheetId = process.env.REACT_APP_GOOGLE_SHEETS_SHEET_ID;
     this.emailQueueRange = 'EmailQueue!A:Z'; // We'll create an EmailQueue tab
     this.webhookUrl = process.env.REACT_APP_EMAIL_WEBHOOK_URL; // Apps Script Web App URL
+    
+    // Use the working webhook URL from SimpleEmailTest
+    this.workingWebhookUrl = 'https://script.google.com/macros/s/AKfycbx9PRWvVJCEIqxivmz1PpT0yfjaM-LU5LqEfKWt-hBqwQIYYkaZdX2GiSYxynT2QLtK/exec';
   }
 
   // Queue approval emails by writing to Google Sheets
@@ -75,15 +78,42 @@ class EmailQueueService {
         ]);
       }
       
-      // Prefer Apps Script webhook (no OAuth), fallback to Sheets API
-      if (this.webhookUrl) {
-        await this.postToWebhook(
-          emailRows.map(r => ({
-            type: r[1], to: r[2], name: r[3], role: r[4], subject: r[5], htmlBody: r[6], meta: JSON.parse(r[8])
-          }))
-        );
-      } else {
-        await this.appendRowsToSheet(emailRows);
+      // Use the working webhook approach (same as SimpleEmailTest)
+      for (const row of emailRows) {
+        const emailPayload = {
+          type: row[1], // 'APPROVAL'
+          to: row[2],   // recipient email
+          cc: '',       // No CC for approval emails
+          subject: row[5], // subject
+          htmlBody: row[6], // HTML body
+          mon: 'false', // One-time email, no repeats
+          tue: 'false',
+          wed: 'false',
+          thu: 'false',
+          fri: 'false',
+          sat: 'false',
+          sun: 'false',
+          stopDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+        };
+
+        console.log('📤 Sending approval email payload:', emailPayload);
+
+        const response = await fetch(this.workingWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain' // Using text/plain to avoid CORS preflight
+          },
+          body: JSON.stringify(emailPayload)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ HTTP Error Response:', errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log('✅ Approval email sent successfully:', responseData);
       }
       
       console.log(`✅ Queued ${emailRows.length} approval emails to Google Sheets`);
@@ -308,6 +338,172 @@ class EmailQueueService {
     `;
   }
 
+  // Queue invitation email for new user account setup
+  async queueInvitationEmail({ to, name, isGmail, setupUrl, userData }) {
+    try {
+      console.log('📧 Queuing invitation email for:', to);
+      
+      // Use the same working approach as SimpleEmailTest
+      const emailPayload = {
+        type: 'INVITATION',
+        to: to,
+        cc: '', // No CC for invitations
+        subject: 'Welcome to Troop 468 - Complete Your Account Setup',
+        htmlBody: this.generateInvitationEmailBody(name, isGmail, setupUrl, userData),
+        plainTextBody: this.generateInvitationPlainTextBody(name, isGmail, setupUrl, userData),
+        mon: 'false', // One-time email, no repeats
+        tue: 'false',
+        wed: 'false',
+        thu: 'false',
+        fri: 'false',
+        sat: 'false',
+        sun: 'false',
+        stopDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+      };
+
+      console.log('📤 Sending invitation email payload:', emailPayload);
+
+      const response = await fetch(this.workingWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain' // Using text/plain to avoid CORS preflight
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      console.log('📨 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ HTTP Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('✅ Invitation email sent successfully:', responseData);
+      
+      return {
+        success: true,
+        message: 'Invitation email queued successfully',
+        response: responseData
+      };
+      
+    } catch (error) {
+      console.error('❌ Error queuing invitation email:', error);
+      throw error;
+    }
+  }
+
+  // Generate invitation email HTML body
+  generateInvitationEmailBody(recipientName, isGmail, setupUrl, userData) {
+    const roleText = userData.roles?.includes('scout') ? 'scout' : 'parent/guardian';
+    
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1976d2;">Welcome to Troop 468!</h2>
+        
+        <p>Dear ${recipientName},</p>
+        
+        <p>Great news! Your registration for Troop 468 has been <strong>approved</strong>.</p>
+        
+        <p>As a ${roleText}, you now have access to the Troop 468 management system.</p>
+        
+        <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #1976d2; margin-top: 0;">Complete Your Account Setup</h3>
+          <p>Click the button below to complete your account setup:</p>
+          
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${setupUrl}" 
+               style="background-color: #4caf50; color: white; padding: 12px 24px; 
+                      text-decoration: none; border-radius: 4px; display: inline-block;">
+              Complete Account Setup
+            </a>
+          </div>
+          
+          ${isGmail ? `
+            <div style="background-color: #fff3e0; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <strong>📧 Gmail User:</strong> You can sign in using your Google account - no password needed!
+            </div>
+          ` : `
+            <div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <strong>🔐 Account Setup:</strong> You'll be able to set up your password on the next page.
+            </div>
+          `}
+          
+          <p><strong>This link will expire in 24 hours</strong> and can only be used once.</p>
+        </div>
+        
+        <p><strong>Your Account Details:</strong></p>
+        <ul>
+          <li><strong>Email:</strong> ${userData.email}</li>
+          <li><strong>Role:</strong> ${roleText}</li>
+          <li><strong>Status:</strong> Approved</li>
+        </ul>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        
+        <p style="color: #666; font-size: 12px;">
+          If the button doesn't work, copy and paste this link into your browser:<br>
+          <a href="${setupUrl}">${setupUrl}</a>
+        </p>
+        
+        <p style="color: #666; font-size: 14px;">
+          If you have any questions or need assistance, please contact us at: 
+          <a href="mailto:troop468.system@gmail.com">troop468.system@gmail.com</a>
+        </p>
+        
+        <p style="color: #666; font-size: 14px;">
+          Welcome to the Troop 468 family!<br>
+          The Troop 468 Leadership Team
+        </p>
+      </div>
+    `;
+  }
+
+  // Generate invitation email plain text body (for better deliverability)
+  generateInvitationPlainTextBody(recipientName, isGmail, setupUrl, userData) {
+    const roleText = userData.roles?.includes('scout') ? 'scout' : 'parent/guardian';
+    
+    return `
+Welcome to Troop 468!
+
+Dear ${recipientName},
+
+Great news! Your registration for Troop 468 has been approved.
+
+As a ${roleText}, you now have access to the Troop 468 management system.
+
+COMPLETE YOUR ACCOUNT SETUP
+Click this link to complete your account setup:
+${setupUrl}
+
+${isGmail ? `
+GMAIL USER: You can sign in using your Google account - no password needed!
+` : `
+ACCOUNT SETUP: You'll be able to set up a secure password for your account.
+`}
+
+Once your account is set up, you'll have access to:
+• Scout information and updates
+• Event calendar and RSVP
+• Communication with troop leadership
+• Merit badge tracking
+• And much more!
+
+If you have any questions or need assistance, please contact us at:
+troop468.system@gmail.com
+
+Welcome to the Troop 468 family!
+
+Best regards,
+The Troop 468 Leadership Team
+
+---
+This is an automated message from the Troop 468 Management System.
+If you received this email in error, please contact troop468.system@gmail.com
+    `.trim();
+  }
+
   // Generate rejection email HTML body
   generateRejectionEmailBody(recipientName, scoutName, reason = '') {
     return `
@@ -349,4 +545,5 @@ class EmailQueueService {
 }
 
 // Export singleton instance
-export default new EmailQueueService();
+const emailQueueService = new EmailQueueService();
+export default emailQueueService;

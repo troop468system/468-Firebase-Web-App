@@ -6,15 +6,18 @@ A comprehensive web application for managing Boy Scout troop activities, built w
 
 ```bash
 # Development
-npm run dev:skip-tests          # Quick start
-npm run dev                     # With full testing
+./run.sh dev                    # Start dev server with tests
+./run.sh dev --skip-tests       # Start dev server without tests
+npm run dev                     # Alias for ./run.sh dev
 
 # Production
-npm run deploy                  # Deploy with validation
-npm run deploy:skip-tests       # Quick deploy
+./run.sh prod                   # Deploy with validation
+./run.sh prod --skip-tests      # Deploy without tests
+npm run deploy                  # Alias for ./run.sh prod
 
 # Testing
-npm run test:all                # Run all tests
+./run.sh tests                  # Run comprehensive test suite
+npm run test:all                # Alias for ./run.sh tests
 npm test                        # Interactive testing
 ```
 
@@ -23,7 +26,7 @@ npm test                        # Interactive testing
 ```
 TroopManager/
 ├── README.md                   # This file
-├── deploy.sh                   # Deployment script
+├── run.sh                      # Main run script (dev/prod/tests)
 ├── docs/                       # 📚 Detailed documentation
 ├── testing/                    # 🧪 Test utilities
 ├── src/                        # 💻 Application code
@@ -49,16 +52,16 @@ TroopManager/
 - **Frontend**: React 18, Material-UI, React Router
 - **Backend**: Firebase (Auth, Firestore, Hosting)
 - **APIs**: Google Calendar, Google Sheets
-- **Testing**: Jest, React Testing Library (64 tests, 100% pass rate)
+- **Testing**: Jest, React Testing Library (87 tests, 100% pass rate)
 
 ## 📚 Documentation
 
 ### **Getting Started**
 - **[Setup Guide](docs/SETUP.md)** - Complete installation and configuration
-- **[Development Guide](docs/DEVELOPMENT.md)** - Development workflow and best practices
+- **[Development Guide](docs/DEVELOPMENT.md)** - Development workflow, authentication flows, and best practices
 
 ### **Quality Assurance**
-- **[Testing Guide](docs/TESTING.md)** - Comprehensive testing documentation
+- **[REAing Guide](docs/TESTING.md)** - Comprehensive testing documentation
 - **[Deployment Guide](docs/DEPLOY.md)** - Production deployment instructions
 
 ### **Documentation Overview**
@@ -72,9 +75,11 @@ Complete setup instructions including:
 
 #### **[Development Guide](docs/DEVELOPMENT.md)**
 Development workflow and best practices:
+- **🔐 Complete Authentication Flows** (Registration, Account Setup, Password Reset)
+- **📊 Visual Flow Diagrams** with Mermaid charts
+- **🧪 Comprehensive Test Suite** with 90%+ coverage
 - Project structure and organization
-- Development workflow
-- Testing strategy
+- Security considerations and error handling
 - Code quality guidelines
 
 #### **[Testing Guide](docs/TESTING.md)**
@@ -101,7 +106,7 @@ Production deployment instructions:
 ## 🎯 Getting Started
 
 1. **Clone and Install**
-   ```bash
+```bash
    git clone <repository-url>
    cd TroopManager
    npm install
@@ -121,18 +126,18 @@ Production deployment instructions:
    ```
 
 4. **Deploy to Production**
-   ```bash
+```bash
    firebase login
    npm run deploy
    ```
 
 ## 🧪 Testing
 
-- **64 tests** with **100% pass rate**
-- **Component Tests** (23) - UI functionality
+- **87 tests** with **100% pass rate**
+- **Component Tests** (44) - UI functionality
 - **Service Tests** (16) - Business logic  
 - **Integration Tests** (15) - API workflows
-- **Infrastructure Tests** (10) - Test environment
+- **Infrastructure Tests** (12) - Test environment
 
 Run tests: `npm run test:all` or see [Testing Guide](docs/TESTING.md)
 

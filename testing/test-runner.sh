@@ -92,6 +92,16 @@ if ! run_test_category "services" "Service Tests"; then
     FAILED_TESTS+=("services")
 fi
 
+# Run user management tests
+if ! run_test_category "users" "User Management Tests"; then
+    FAILED_TESTS+=("users")
+fi
+
+# Run security tests
+if ! run_test_category "security" "Security Tests"; then
+    FAILED_TESTS+=("security")
+fi
+
 # Run integration tests
 if ! run_test_category "integration" "Integration Tests"; then
     FAILED_TESTS+=("integration")
