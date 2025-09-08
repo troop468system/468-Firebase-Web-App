@@ -2,24 +2,35 @@
 
 Complete deployment instructions for the Troop Manager application.
 
-## 🎯 Quick Deployment
+## 🎯 Quick Start
 
 ```bash
+# Development server (recommended for daily work)
+./run.sh dev --skip-tests       # Quick start
+./run.sh dev                    # With full validation
+
 # Production deployment (recommended)
-npm run deploy
+./run.sh prod                   # Deploy with full validation
+./run.sh prod --skip-tests      # Quick deployment
 
-# Quick deployment (skip tests)
-npm run deploy:skip-tests
+# Testing only
+./run.sh tests                  # Run comprehensive test suite
+```
 
-# Development server
-npm run dev
-npm run dev:skip-tests
+### NPM Script Aliases
+```bash
+npm run dev                     # → ./run.sh dev
+npm run dev:skip-tests          # → ./run.sh dev --skip-tests
+npm run deploy                  # → ./run.sh prod
+npm run deploy:skip-tests       # → ./run.sh prod --skip-tests
+npm run test:all                # → ./run.sh tests
 ```
 
 ## 📋 Prerequisites
 
 ### Required Tools
 - **Node.js** 16 or higher
+- **npm** (comes with Node.js)
 - **Firebase CLI**: `npm install -g firebase-tools`
 - **Git** for version control
 
@@ -27,106 +38,127 @@ npm run dev:skip-tests
 - Firebase project with Hosting enabled
 - Authentication configured
 - Firestore database created
-- Proper IAM permissions
+- Proper IAM permissions for service account
 
-## 🛠️ Deployment Script
-
-The `deploy.sh` script handles both development and production deployment with built-in quality gates.
-
-### Script Features
-- **Quality Gates**: Automated linting and testing
-- **Environment Detection**: Automatic dev/prod mode
-- **Error Handling**: Helpful error messages and guidance
-- **Flexible Options**: Skip tests when needed
-- **Status Reporting**: Clear progress and results
-
-### Usage
+### Firebase Authentication
 ```bash
-# Development mode
-./deploy.sh dev                    # With full validation
-./deploy.sh dev --skip-tests       # Quick start
+# Login to Firebase (for local deployment)
+firebase login
 
-# Production mode  
-./deploy.sh prod                   # With full validation
-./deploy.sh prod --skip-tests      # Quick deployment
-
-# Help
-./deploy.sh --help
+# Verify access
+firebase projects:list
 ```
+
+## 🛠️ Run Script Features
+
+The `run.sh` script is the main entry point for all development, testing, and deployment operations.
+
+### 🔍 **Comprehensive Checks**
+- ✅ Node.js version compatibility (16+)
+- ✅ npm availability
+- ✅ Dependency installation/updates
+- ✅ ESLint code quality checks
+- ✅ Complete test suite execution (87 tests)
+- ✅ Coverage threshold validation (70% minimum)
+
+### 🧪 **Test Suite Integration**
+- **Component Tests** (44 tests) - UI functionality and user interactions
+- **Service Tests** (16 tests) - Business logic and data processing
+- **Integration Tests** (15 tests) - API calls and end-to-end workflows
+- **Infrastructure Tests** (12 tests) - Test environment validation
+
+### 🎨 **Beautiful Output**
+- Color-coded status messages
+- Progress indicators
+- Clear error reporting
+- Helpful next-step suggestions
+
+### 📊 **Smart Deployment**
+- Firebase hosting with build optimization
+- Environment variable validation
+- Service account authentication
+- Live URL generation
 
 ## 🔄 Development Deployment
 
 ### Local Development Server
 ```bash
-# Recommended: Quick start
+# Recommended: Quick start for daily development
+./run.sh dev --skip-tests
 npm run dev:skip-tests
 
-# Full validation (slower)
+# Full validation (slower but thorough)
+./run.sh dev
 npm run dev
-
-# Manual script
-./deploy.sh dev
 ```
 
-**What happens:**
-1. **Dependency Check** - Verifies Node.js and npm
-2. **Install Dependencies** - Runs `npm install` if needed
+**Development Process:**
+1. **Prerequisites Check** - Validates Node.js, npm, and dependencies
+2. **Dependency Installation** - Runs `npm ci` if needed
 3. **Linting** - ESLint code quality checks
 4. **Testing** - Full test suite (unless skipped)
-5. **Start Server** - Launches development server on port 3000
+5. **Start Server** - Launches development server
 
 ### Development Features
 - **Hot Reload** - Automatic browser refresh on changes
 - **Error Overlay** - In-browser error display
 - **Source Maps** - Debug original source code
 - **Fast Refresh** - Preserve component state during edits
+- **Server URL** - Available at `http://localhost:3030`
 
 ## 🌐 Production Deployment
 
-### Firebase Hosting
+### Firebase Hosting Deployment
 ```bash
-# Full deployment with validation
+# Full deployment with validation (recommended)
+./run.sh prod
 npm run deploy
 
-# Quick deployment
+# Quick deployment (use with caution)
+./run.sh prod --skip-tests
 npm run deploy:skip-tests
-
-# Manual script
-./deploy.sh prod
 ```
 
-**What happens:**
-1. **Quality Gates** - Linting and testing
-2. **Build Process** - Creates optimized production build
-3. **Firebase Deploy** - Uploads to Firebase Hosting
-4. **URL Display** - Shows live application URL
+**Production Process:**
+1. **Prerequisites Check** - Node.js, npm, Firebase CLI, authentication
+2. **Quality Gates** - Linting and comprehensive testing
+3. **Build Process** - Creates optimized production build
+4. **Firebase Deploy** - Uploads to Firebase Hosting
+5. **Success Confirmation** - Shows live application URL
 
 ### Build Optimization
 - **Code Splitting** - Lazy loading for better performance
 - **Minification** - Compressed JavaScript and CSS
 - **Asset Optimization** - Optimized images and fonts
-- **Service Worker** - Caching for offline functionality
+- **Bundle Analysis** - Size monitoring and reporting
 
 ## ⚙️ Configuration
 
 ### Environment Variables
-Production deployment requires proper environment configuration:
+Production deployment requires proper environment configuration. See [GitHub Actions Setup](SETUP.md#github-actions-setup-cicd) for details.
 
-```env
-# Firebase Configuration
-REACT_APP_FIREBASE_API_KEY=your_production_api_key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=your_production_project_id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=123456789
-REACT_APP_FIREBASE_APP_ID=your_production_app_id
+#### Required GitHub Secrets:
+```
+REACT_APP_FIREBASE_API_KEY
+REACT_APP_FIREBASE_APP_ID
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID
+REACT_APP_FIREBASE_MEASUREMENT_ID
+REACT_APP_GOOGLE_API_KEY
+REACT_APP_EMAIL_WEBHOOK_URL
+FIREBASE_SERVICE_ACCOUNT_TROOP_468_MANAGER
+```
 
-# API Configuration
-REACT_APP_GOOGLE_CALENDAR_API_KEY=your_calendar_api_key
-REACT_APP_WEBHOOK_URL=your_production_webhook_url
+#### Required GitHub Variables:
+```
+REACT_APP_FIREBASE_AUTH_DOMAIN
+REACT_APP_FIREBASE_PROJECT_ID
+REACT_APP_FIREBASE_STORAGE_BUCKET
+REACT_APP_GOOGLE_CALENDAR_ID
+REACT_APP_GOOGLE_SHEETS_SHEET_ID
 ```
 
 ### Firebase Configuration
+The project uses `firebase.json` for hosting configuration:
 ```json
 {
   "hosting": {
@@ -136,17 +168,6 @@ REACT_APP_WEBHOOK_URL=your_production_webhook_url
       {
         "source": "**",
         "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "/static/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000"
-          }
-        ]
       }
     ]
   }
@@ -158,82 +179,121 @@ REACT_APP_WEBHOOK_URL=your_production_webhook_url
 ### Automated Checks
 The deployment script includes several quality gates:
 
-1. **Linting** - ESLint code quality
-2. **Testing** - Full test suite (64 tests)
+1. **Linting** - ESLint code quality validation
+2. **Testing** - Full test suite (87 tests, 100% pass rate)
 3. **Build Validation** - Successful production build
 4. **Dependency Check** - All required tools available
+5. **Firebase Authentication** - Valid service account permissions
 
 ### Bypassing Quality Gates
 ```bash
-# Skip all tests (use sparingly)
-npm run deploy:skip-tests
-./deploy.sh prod --skip-tests
+# Skip tests (use sparingly)
+./run.sh dev --skip-tests
+./run.sh prod --skip-tests
 
-# The script will show warnings when skipping tests
+# The script shows warnings when skipping tests
 ```
 
 ## 📊 Deployment Monitoring
 
 ### Build Metrics
 - **Build Time** - Typical: 30-60 seconds
-- **Bundle Size** - Monitor for increases
-- **Test Duration** - ~6 seconds for full suite
+- **Bundle Size** - ~331 kB (gzipped)
+- **Test Duration** - ~6 seconds for full suite (87 tests)
 - **Deploy Time** - 1-2 minutes to Firebase
 
 ### Success Indicators
 ```bash
-✅ Prerequisites met
-✅ Dependencies installed  
+✅ Node.js version v18.x.x is compatible
+✅ npm is available
+✅ Dependencies are up to date
 ✅ Linting passed
-✅ All tests passed (64/64)
-✅ Build completed successfully
+✅ All tests passed successfully! (87/87)
+✅ Production build completed
 ✅ Deployed to Firebase Hosting
-🌐 Live at: https://your-project.web.app
+🌐 Live at: https://troop-468-manager.web.app
 ```
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### Common Issues & Solutions
 
-**Firebase CLI Not Found**
+#### **Node.js Version Error**
+```bash
+❌ Node.js version 14 is too old
+```
+**Solution:** Upgrade to Node.js 16+
+```bash
+# Install from https://nodejs.org
+# Or use nvm
+nvm install 16
+nvm use 16
+```
+
+#### **Firebase CLI Not Found**
+```bash
+❌ Firebase CLI is not installed
+```
+**Solution:** Install Firebase CLI
 ```bash
 npm install -g firebase-tools
 firebase login
 ```
 
-**Authentication Issues**
+#### **Firebase Authentication Issues**
+```bash
+❌ Not logged in to Firebase
+```
+**Solution:** Re-authenticate
 ```bash
 firebase logout
 firebase login
 firebase projects:list
 ```
 
-**Build Failures**
+#### **Linting Errors**
 ```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-
-# Check for linting errors
-npm run lint
-
-# Run tests individually
-npm run test:components
+❌ Linting failed
+```
+**Solution:** Fix code style issues
+```bash
+npm run build  # See detailed linting errors
 ```
 
-**Environment Variable Issues**
-- Ensure `.env` file exists and is properly formatted
-- Check variable names start with `REACT_APP_`
-- Restart development server after changes
-- Verify Firebase configuration values
-
-**Port Conflicts (Development)**
+#### **Test Failures**
 ```bash
-# Use different port
-PORT=3001 npm start
+❌ Some tests failed
+```
+**Solution:** Debug and fix tests
+```bash
+npm test -- --watchAll=false --verbose  # See detailed test output
+./run.sh tests                          # Run tests only
+```
 
-# Kill process using port 3000
-lsof -ti:3000 | xargs kill -9
+#### **Build Failures**
+```bash
+❌ Production build failed
+```
+**Solution:** Clear cache and rebuild
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+#### **Environment Variable Issues**
+- Ensure all required GitHub Secrets and Variables are set
+- Check variable names match exactly
+- Verify Firebase configuration values
+- Test locally with `.env.local` file
+
+#### **Port Conflicts (Development)**
+```bash
+# Kill process using port 3030
+lsof -ti:3030 | xargs kill -9
+
+# Or use different port
+PORT=3031 ./run.sh dev
 ```
 
 ### Debug Commands
@@ -241,8 +301,9 @@ lsof -ti:3000 | xargs kill -9
 # Verbose Firebase deployment
 firebase deploy --debug
 
-# Check Firebase project
-firebase use --add
+# Check Firebase project status
+firebase use
+firebase projects:list
 
 # Test build locally
 npm run build
@@ -251,95 +312,100 @@ npx serve -s build
 
 ## 🔄 CI/CD Integration
 
-### GitHub Actions Example
-```yaml
-name: Deploy to Firebase
-on:
-  push:
-    branches: [ main ]
+### GitHub Actions
+The project includes automated CI/CD workflows:
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run tests
-        run: npm run test:ci
-      
-      - name: Build
-        run: npm run build
-      
-      - name: Deploy to Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          projectId: your-project-id
-```
+- **`firebase-hosting-merge.yml`** - Deploys to production on main branch
+- **`firebase-hosting-pull-request.yml`** - Creates preview deployments for PRs
+- **`test.yml`** - Runs comprehensive test suite on all pushes
+
+### Workflow Features
+- **Automated Testing** - All 87 tests run on every commit
+- **Build Validation** - Ensures production builds succeed
+- **Environment Variables** - Uses GitHub Secrets and Variables
+- **Preview Deployments** - Test changes before merging
+- **Security** - Service account authentication
 
 ## 🎯 Best Practices
 
+### Development Workflow
+```bash
+# Daily development
+./run.sh dev --skip-tests    # Quick start
+
+# Before committing
+./run.sh tests               # Verify all tests pass
+npm run build                # Verify build works
+
+# Before deploying
+./run.sh prod                # Full validation and deployment
+```
+
 ### Pre-Deployment Checklist
-- [ ] All tests passing locally
-- [ ] No linting errors
-- [ ] Environment variables configured
-- [ ] Firebase project permissions verified
+- [ ] All tests passing locally (`./run.sh tests`)
+- [ ] No linting errors (`npm run build`)
+- [ ] Environment variables configured in GitHub
+- [ ] Firebase service account has proper permissions
 - [ ] Recent backup of production data
 
 ### Deployment Strategy
 - **Development**: Deploy frequently for testing
-- **Staging**: Test major changes before production
-- **Production**: Deploy during low-traffic periods
-- **Rollback**: Keep previous version available
+- **Pull Requests**: Automatic preview deployments
+- **Production**: Deploy from main branch after thorough testing
+- **Rollback**: Use Firebase console or redeploy previous commit
 
 ### Performance Optimization
 - Monitor bundle size after changes
 - Use lazy loading for large components
 - Optimize images and assets
 - Enable Firebase Hosting compression
+- Review build output for warnings
 
 ## 📈 Monitoring
 
 ### Post-Deployment Checks
-1. **Functionality** - Test key features
-2. **Performance** - Check load times
-3. **Console Errors** - Monitor browser console
-4. **Analytics** - Verify tracking works
-5. **Authentication** - Test login/logout
+1. **Functionality** - Test key features (login, data loading, forms)
+2. **Performance** - Check load times and responsiveness
+3. **Console Errors** - Monitor browser console for JavaScript errors
+4. **Authentication** - Verify Google login and user management
+5. **Database** - Test Firestore read/write operations
 
-### Firebase Console
-- **Hosting** - Monitor traffic and performance
-- **Authentication** - Check user activity
-- **Firestore** - Monitor database usage
-- **Functions** - Check function logs (if applicable)
+### Firebase Console Monitoring
+- **Hosting** - Monitor traffic, performance, and deployment history
+- **Authentication** - Check user activity and sign-in methods
+- **Firestore** - Monitor database usage and query performance
+- **Performance** - Track app performance metrics
 
 ## 📚 Related Documentation
 
-- **[Setup Guide](SETUP.md)** - Initial configuration
-- **[Development Guide](DEVELOPMENT.md)** - Development workflow
-- **[Testing Guide](TESTING.md)** - Testing documentation
+- **[Setup Guide](SETUP.md)** - Initial configuration and GitHub Actions setup
+- **[Development Guide](DEVELOPMENT.md)** - Development workflow and best practices
+- **[Testing Guide](TESTING.md)** - Comprehensive testing documentation
 
 ## 🆘 Getting Help
 
 ### Support Resources
 - Check deployment script output for specific errors
-- Review Firebase console for hosting issues
-- Verify environment configuration
+- Review Firebase console for hosting and authentication issues
+- Verify environment configuration in GitHub repository settings
 - Test locally before deploying to production
 
 ### Emergency Rollback
 ```bash
-# Rollback to previous version
-firebase hosting:clone SOURCE_SITE_ID:SOURCE_VERSION TARGET_SITE_ID
-
-# Or redeploy previous version
+# Method 1: Redeploy previous version
 git checkout previous-commit
-npm run deploy:skip-tests
+./run.sh prod --skip-tests
+
+# Method 2: Use Firebase console
+# Go to Firebase Console → Hosting → View deployment history → Rollback
 ```
+
+### Contact Support
+- Review error messages in deployment script output
+- Check GitHub Actions logs for CI/CD issues
+- Verify Firebase project permissions and quotas
+- Test with minimal reproduction case
+
+---
+
+**🚀 Ready to deploy? Start with `./run.sh dev --skip-tests` for development or `./run.sh prod` for production!**
