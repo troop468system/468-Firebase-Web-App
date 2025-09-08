@@ -43,6 +43,15 @@ jobs:
       run: npm run test:ci
       env:
         CI: true
+        # Secrets (API keys and sensitive tokens)
+        REACT_APP_FIREBASE_API_KEY: ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+        REACT_APP_FIREBASE_APP_ID: ${{ secrets.REACT_APP_FIREBASE_APP_ID }}
+        REACT_APP_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID }}
+        REACT_APP_FIREBASE_MEASUREMENT_ID: ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID }}
+        # Variables (public identifiers)
+        REACT_APP_FIREBASE_AUTH_DOMAIN: ${{ vars.REACT_APP_FIREBASE_AUTH_DOMAIN }}
+        REACT_APP_FIREBASE_PROJECT_ID: ${{ vars.REACT_APP_FIREBASE_PROJECT_ID }}
+        REACT_APP_FIREBASE_STORAGE_BUCKET: ${{ vars.REACT_APP_FIREBASE_STORAGE_BUCKET }}
 
     - name: Upload Coverage to Codecov
       if: matrix.node-version == '18.x'
@@ -88,6 +97,16 @@ jobs:
 
     - name: Build application
       run: npm run build
+      env:
+        # Secrets (API keys and sensitive tokens)
+        REACT_APP_FIREBASE_API_KEY: ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+        REACT_APP_FIREBASE_APP_ID: ${{ secrets.REACT_APP_FIREBASE_APP_ID }}
+        REACT_APP_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID }}
+        REACT_APP_FIREBASE_MEASUREMENT_ID: ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID }}
+        # Variables (public identifiers)
+        REACT_APP_FIREBASE_AUTH_DOMAIN: ${{ vars.REACT_APP_FIREBASE_AUTH_DOMAIN }}
+        REACT_APP_FIREBASE_PROJECT_ID: ${{ vars.REACT_APP_FIREBASE_PROJECT_ID }}
+        REACT_APP_FIREBASE_STORAGE_BUCKET: ${{ vars.REACT_APP_FIREBASE_STORAGE_BUCKET }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4

@@ -76,6 +76,62 @@ Required environment variables:
 3. Create API key
 4. Add to `.env` file
 
+## 🔐 GitHub Actions Setup (CI/CD)
+
+### Repository Secrets and Variables
+
+For GitHub Actions to build and deploy your app, you need to configure secrets and variables in your repository.
+
+#### 📍 Where to Add Them
+1. Go to your GitHub repository
+2. Click **Settings** tab
+3. Go to **Secrets and variables** → **Actions**
+
+#### 📝 Repository Variables (Non-sensitive)
+Add these as **Variables** (public identifiers):
+
+```
+REACT_APP_FIREBASE_PROJECT_ID = troop-468-manager
+REACT_APP_FIREBASE_AUTH_DOMAIN = troop-468-manager.firebaseapp.com
+REACT_APP_FIREBASE_STORAGE_BUCKET = troop-468-manager.appspot.com
+REACT_APP_GOOGLE_CALENDAR_ID = your-calendar-id
+REACT_APP_GOOGLE_SHEETS_SHEET_ID = your-sheet-id
+```
+
+#### 🔐 Repository Secrets (Sensitive)
+Add these as **Secrets** (API keys and access tokens):
+
+```
+REACT_APP_FIREBASE_API_KEY = AIzaSyC... (from Firebase Console)
+REACT_APP_FIREBASE_APP_ID = 1:123456789:web:abc123... (from Firebase Console)
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID = 123456789 (from Firebase Console)
+REACT_APP_FIREBASE_MEASUREMENT_ID = G-ABC123DEF (from Firebase Console)
+REACT_APP_GOOGLE_API_KEY = AIzaSyD... (from Google Cloud Console)
+REACT_APP_EMAIL_WEBHOOK_URL = https://script.google.com/... (Google Apps Script)
+FIREBASE_SERVICE_ACCOUNT_TROOP_468_MANAGER = {...} (Firebase service account JSON)
+```
+
+#### 🔍 How to Get Firebase Values
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project: **troop-468-manager**
+3. Click **⚙️ Project Settings**
+4. Scroll to **"Your apps"** section
+5. Click on your web app
+6. Copy the config values from the displayed `firebaseConfig` object
+
+#### 🔑 Firebase Service Account Setup
+1. In Firebase Console, go to **Project Settings** → **Service accounts**
+2. Click **Generate new private key**
+3. Download the JSON file
+4. Copy the **entire JSON content** as the value for `FIREBASE_SERVICE_ACCOUNT_TROOP_468_MANAGER`
+
+#### ✅ Verification
+After adding all secrets and variables:
+- Push a commit to trigger GitHub Actions
+- Check the **Actions** tab in your repository
+- Builds should now complete successfully
+- App will deploy to Firebase Hosting automatically
+
 ## 🧪 Verification
 
 ### Test Installation
