@@ -239,7 +239,7 @@ describe('GoogleCalendarService', () => {
       
       const callArgs = global.fetch.mock.calls[0][0];
       expect(callArgs).toContain('2025-01-01T'); // January 1st
-      expect(callArgs).toContain('2025-02-01T'); // February 1st (end of January)
+      expect(callArgs).toContain('2025-02-01T'); // February 1st (end of January calculation)
     });
 
     it('should get events for specific year', async () => {
@@ -253,7 +253,7 @@ describe('GoogleCalendarService', () => {
       
       const callArgs = global.fetch.mock.calls[0][0];
       expect(callArgs).toContain('2025-01-01T'); // January 1st
-      expect(callArgs).toContain('2026-01-01T'); // January 1st next year
+      expect(callArgs).toContain('2026-01-01T'); // January 1st next year (end of 2025 calculation)
     });
   });
 
