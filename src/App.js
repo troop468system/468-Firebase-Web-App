@@ -28,6 +28,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import SignUp from './pages/SignUp';
+import Outing from './pages/Outing';
 import authService from './services/authService';
 
 // Sidebar context for managing collapse state
@@ -460,6 +461,7 @@ function App() {
                         <Route path="/reimbursement" element={<Reimbursement />} />
                         <Route path="/users" element={<Users />} />
                         <Route path="/users/:tab" element={<Users />} />
+                        <Route path="/outing" element={<Outing />} />
                         <Route path="/contact-directory" element={<ContactList />} />
                         <Route path="/notifications" element={<NotificationCenter />} />
                         <Route path="/settings" element={<Settings />} />

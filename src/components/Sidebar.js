@@ -35,6 +35,7 @@ import {
   Settings as SettingsIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  Hiking as OutingIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -63,6 +64,7 @@ const Sidebar = () => {
         { path: '/training', label: 'Training', icon: <TrainingIcon /> },
         { path: '/medical-form', label: 'Medical Form', icon: <MedicalIcon /> },
         { path: '/merit-badges', label: 'Merit Badges', icon: <MeritBadgesIcon /> },
+        { path: '/outing', label: 'Outing', icon: <OutingIcon /> },
         { path: '/smc', label: 'SMC', icon: <SMCIcon /> },
         { path: '/bor', label: 'BOR', icon: <BORIcon /> },
       ]
