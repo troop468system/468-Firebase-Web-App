@@ -29,6 +29,7 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import SignUp from './pages/SignUp';
 import Outing from './pages/Outing';
+import OutingLiveView from './components/OutingLiveView';
 import authService from './services/authService';
 
 // Sidebar context for managing collapse state
@@ -425,6 +426,9 @@ function App() {
                 </PublicRoute>
               } />
               <Route path="/signup" element={<SignUp />} />
+              
+              {/* Live View Route - Public HTML preview */}
+              <Route path="/outing/:eventId" element={<OutingLiveView />} />
               
               {/* Protected Routes */}
               <Route path="/*" element={

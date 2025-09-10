@@ -27,14 +27,19 @@ class OutingService {
     try {
       console.log('OutingService: Creating new outing...', outingData);
       
+      // Filter out undefined values to prevent Firestore errors
+      const cleanOutingData = this.removeUndefinedFields(outingData);
+      
       // Prepare the data for Firestore
       const firestoreData = {
-        ...outingData,
+        ...cleanOutingData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        createdBy: outingData.createdBy || 'current-user', // In real app, get from auth context
+        createdBy: cleanOutingData.createdBy || 'current-user', // In real app, get from auth context
       };
 
+      console.log('OutingService: Clean outing data:', firestoreData);
+      
       // Add the document to Firestore
       const docRef = await addDoc(collection(db, this.collectionName), firestoreData);
       
@@ -53,19 +58,30 @@ class OutingService {
    * @returns {Promise<void>}
    */
   async updateOuting(outingId, updates) {
+    let updateData;
     try {
       console.log('OutingService: Updating outing:', outingId, updates);
       
       const outingRef = doc(db, this.collectionName, outingId);
-      const updateData = {
-        ...updates,
+      
+      // Filter out undefined values to prevent Firestore errors
+      const cleanUpdates = this.removeUndefinedFields(updates);
+      
+      updateData = {
+        ...cleanUpdates,
         updatedAt: serverTimestamp()
       };
+      
+      console.log('OutingService: Clean update data:', updateData);
+      
+      // Additional validation to check for any remaining undefined values
+      this.validateNoUndefinedValues(updateData, 'updateData');
       
       await updateDoc(outingRef, updateData);
       console.log('OutingService: Outing updated successfully');
     } catch (error) {
       console.error('OutingService: Error updating outing:', error);
+      console.error('OutingService: Failed update data:', updateData);
       throw error;
     }
   }
@@ -208,6 +224,91 @@ class OutingService {
     } catch (error) {
       console.error('OutingService: Error getting outings by visibility:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Remove undefined fields and invalid dates from an object to prevent Firestore errors
+   * @param {Object} obj - The object to clean
+   * @returns {Object} - Object with undefined values and invalid dates removed
+   */
+  removeUndefinedFields(obj) {
+    if (obj === null) return null;
+    if (obj === undefined) return undefined;
+    if (typeof obj !== 'object') return obj;
+    
+    // Handle arrays
+    if (Array.isArray(obj)) {
+      return obj
+        .filter(item => item !== undefined)
+        .map(item => this.removeUndefinedFields(item));
+    }
+    
+    // Handle Date objects - check for invalid dates
+    if (obj instanceof Date) {
+      if (isNaN(obj.getTime())) {
+        console.warn('OutingService: Removing invalid date:', obj);
+        return undefined; // Remove invalid dates
+      }
+      return obj;
+    }
+    
+    // Handle Firestore timestamps
+    if ((obj && typeof obj.toDate === 'function') || 
+        (obj && obj.constructor && obj.constructor.name.includes('Timestamp'))) {
+      return obj;
+    }
+    
+    // Handle regular objects
+    const cleaned = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        const cleanedValue = this.removeUndefinedFields(value);
+        if (cleanedValue !== undefined) {
+          cleaned[key] = cleanedValue;
+        }
+      }
+    }
+    
+    return cleaned;
+  }
+
+  /**
+   * Validate that no undefined values or invalid dates exist in the data structure
+   * @param {Object} obj - The object to validate
+   * @param {string} path - The current path for debugging
+   */
+  validateNoUndefinedValues(obj, path = 'root') {
+    if (obj === undefined) {
+      console.error(`OutingService: Found undefined value at path: ${path}`);
+      return;
+    }
+    
+    if (obj === null || typeof obj !== 'object') return;
+    
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        this.validateNoUndefinedValues(item, `${path}[${index}]`);
+      });
+      return;
+    }
+    
+    // Check Date objects for validity
+    if (obj instanceof Date) {
+      if (isNaN(obj.getTime())) {
+        console.error(`OutingService: Found invalid date at path: ${path}`, obj);
+      }
+      return;
+    }
+    
+    // Skip Firestore timestamps
+    if ((obj && typeof obj.toDate === 'function') || 
+        (obj && obj.constructor && obj.constructor.name.includes('Timestamp'))) {
+      return;
+    }
+    
+    for (const [key, value] of Object.entries(obj)) {
+      this.validateNoUndefinedValues(value, `${path}.${key}`);
     }
   }
 

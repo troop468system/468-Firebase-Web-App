@@ -1,4 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import TiptapEditor from '../components/TiptapEditor';
+import OutingPreview from '../components/OutingPreview';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   Box,
   Paper,
@@ -10,24 +30,14 @@ import {
   Grid,
   Chip,
   IconButton,
-  Divider,
   Card,
   CardContent,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   Snackbar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Switch,
-  FormControlLabel,
   Tooltip,
   CircularProgress,
   Table,
@@ -37,12 +47,18 @@ import {
   TableHead,
   TableRow,
   InputAdornment,
-  Link
+  Link,
+  Autocomplete,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   GetApp as DownloadIcon,
+  OpenInNew as OpenInNewIcon,
   Preview as PreviewIcon,
   Edit as EditIcon,
   Schedule as ScheduleIcon,
@@ -53,15 +69,34 @@ import {
   Event as EventIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
-  OpenInNew as OpenInNewIcon
+  DragHandle as DragHandleIcon,
+  Assignment as AssignmentIcon,
+  Description as DescriptionIcon,
+  Backpack as BackpackIcon,
+  DirectionsCar as DirectionsCarIcon,
+  LocalHospital as LocalHospitalIcon,
+  NotificationImportant as NotificationImportantIcon,
+  ContactPhone as ContactPhoneIcon,
+  MenuBook as MenuBookIcon,
+  CameraAlt as CameraAltIcon,
+  LocationOn as LocationOnIcon,
+  Flag as FlagIcon,
+  Map as MapIcon,
+  Target as TargetIcon,
+  Info as InfoIcon,
+  Close as CloseIcon,
+  Schedule as ScheduleIconSvg,
+  Room as RoomIcon
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PageTitle from '../components/PageTitle';
 import outingService from '../services/outingService';
+import authService from '../services/authService';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -83,12 +118,567 @@ function TabPanel(props) {
   );
 }
 
+// Sortable Activity Item Component
+const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: activity.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  // Generate common time options
+  const timeOptions = [
+    '6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM',
+    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM',
+    '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM',
+    '9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM'
+  ];
+
+  // Handle lead field as array of scouts for multiple selection
+  const getSelectedLeads = () => {
+    if (!activity.lead) return [];
+    
+    // If lead is a string (legacy format), convert to array
+    if (typeof activity.lead === 'string') {
+      if (!activity.lead.trim()) return [];
+      // Split by comma and find matching scouts
+      const leadNames = activity.lead.split(',').map(name => name.trim());
+      return leadNames.map(name => 
+        scouts?.find(scout => scout.name === name) || { name, rank: 'Unknown', patrol: 'Unknown' }
+      ).filter(Boolean);
+    }
+    
+    // If lead is already an array
+    if (Array.isArray(activity.lead)) {
+      return activity.lead;
+    }
+    
+    return [];
+  };
+
+  const selectedLeads = getSelectedLeads();
+
+  return (
+    <Card 
+      ref={setNodeRef} 
+      style={style} 
+      sx={{ 
+        mb: 2, 
+        boxShadow: 1,
+        '&:hover': {
+          boxShadow: 2
+        }
+      }}
+    >
+      <CardContent sx={{ p: 2 }}>
+        <Grid container spacing={1} alignItems="center" sx={{ minHeight: '56px' }}>
+          <Grid item xs="auto">
+            <IconButton 
+              {...attributes} 
+              {...listeners}
+              size="small"
+              sx={{ cursor: 'grab', '&:active': { cursor: 'grabbing' }, minWidth: '32px' }}
+            >
+              <DragHandleIcon fontSize="small" />
+            </IconButton>
+          </Grid>
+          <Grid item xs={2.5} sm={2}>
+            <Autocomplete
+              options={timeOptions}
+              value={activity.time || ''}
+              onChange={(event, newValue) => {
+                onUpdate({ ...activity, time: newValue || '' });
+              }}
+              freeSolo
+              isOptionEqualToValue={(option, value) => option === value}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Time"
+                  placeholder="9:00 AM"
+                  variant="outlined"
+                  size="small"
+                  sx={{ 
+                    borderRadius: 2,
+                    '& .MuiInputBase-input': { fontSize: '0.875rem' }
+                  }}
+                />
+              )}
+            />
+          </Grid>
+          <Grid item xs={4} sm={4}>
+            <TextField
+              fullWidth
+              label="Activity"
+              placeholder="Activity description"
+              value={activity.activity}
+              onChange={(e) => onUpdate({ ...activity, activity: e.target.value })}
+              variant="outlined"
+              size="small"
+              sx={{ 
+                borderRadius: 2,
+                '& .MuiInputBase-input': { fontSize: '0.875rem' }
+              }}
+            />
+          </Grid>
+          <Grid item xs={2} sm={2}>
+            <TextField
+              fullWidth
+              label="Location"
+              placeholder="Where?"
+              value={activity.location || ''}
+              onChange={(e) => onUpdate({ ...activity, location: e.target.value })}
+              variant="outlined"
+              size="small"
+              sx={{ 
+                borderRadius: 2,
+                '& .MuiInputBase-input': { fontSize: '0.875rem' }
+              }}
+            />
+          </Grid>
+          <Grid item xs={2.5} sm={3}>
+            <Autocomplete
+              multiple
+              options={scouts || []}
+              value={selectedLeads}
+              onChange={(event, newValue) => {
+                // Store as array for consistency with SICs/AICs
+                onUpdate({ ...activity, lead: newValue });
+              }}
+              getOptionLabel={(option) => option?.name || ''}
+              isOptionEqualToValue={(option, value) => 
+                option.name === value.name && option.role === value.role
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Lead"
+                  placeholder="Who?"
+                  variant="outlined"
+                  size="small"
+                  sx={{ 
+                    borderRadius: 2,
+                    '& .MuiInputBase-input': { fontSize: '0.875rem' }
+                  }}
+                  helperText=""
+                />
+              )}
+              renderOption={(props, option) => (
+                <Box component="li" {...props}>
+                  <Box>
+                    <Typography variant="body2" fontWeight="medium">
+                      {option.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {option.patrol || 'No Patrol'}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              renderTags={(tagValue, getTagProps) =>
+                tagValue.map((option, index) => {
+                  const { key, ...chipProps } = getTagProps({ index });
+                  return (
+                  <Chip
+                      key={option.id || option.name}
+                    label={option.name}
+                      {...chipProps}
+                    size="small"
+                    sx={{
+                      backgroundColor: '#e3f2fd',
+                      color: '#1976d2',
+                        fontSize: '0.75rem',
+                        height: '24px',
+                      '& .MuiChip-deleteIcon': {
+                          color: '#1976d2',
+                          fontSize: '16px'
+                      }
+                    }}
+                  />
+                  );
+                })
+              }
+            />
+          </Grid>
+          <Grid item xs="auto">
+            <IconButton
+              onClick={() => onDelete(activity.id)}
+              color="error"
+              size="small"
+              sx={{ minWidth: '32px' }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Grid>
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Weather Forecast Component
+const WeatherForecast = ({ startDate, endDate, location }) => {
+  const [weatherData, setWeatherData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!startDate || !endDate) {
+      return;
+    }
+
+    const fetchWeatherData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // For demo purposes, we'll create mock weather data based on the screenshot
+        // In a real implementation, you would call a weather API like OpenWeatherMap
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        
+        // Mock weather data with detailed hourly information
+        const mockWeather = [];
+        for (let i = 0; i < days; i++) {
+          const date = new Date(start);
+          date.setDate(start.getDate() + i);
+          
+          // Generate hourly weather data for each day
+          const dayData = {
+            date: date,
+            dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+            sunrise: '6:46AM',
+            sunset: '7:26PM',
+            hourlyData: []
+          };
+          
+          // Generate hourly data from 1:00 PM to 11:00 PM (10 hours)
+          const startHour = 13; // 1:00 PM
+          for (let hour = 0; hour < 10; hour++) {
+            const currentHour = startHour + hour;
+            const displayHour = currentHour > 12 ? currentHour - 12 : currentHour;
+            const ampm = currentHour >= 12 ? 'pm' : 'am';
+            
+            // Generate realistic temperature progression with some extreme values for testing
+            const baseTemp = 74;
+            const tempVariation = Math.sin((hour / 10) * Math.PI) * 6; // Temperature curve
+            let temp = Math.round(baseTemp + tempVariation + (Math.random() * 4 - 2));
+            
+            // Occasionally generate extreme temperatures for color testing
+            if (Math.random() < 0.1) { // 10% chance
+              temp = Math.random() < 0.5 ? Math.round(45 + Math.random() * 4) : Math.round(92 + Math.random() * 8); // Cold (45-49) or hot (92-100)
+            }
+            
+            const feelsLike = temp + Math.round(Math.random() * 2 - 1); // Usually close to actual temp
+            
+            // Weather conditions based on time of day
+            let condition, conditionText, icon;
+            if (hour < 3) {
+              condition = Math.random() > 0.5 ? 'mostly-cloudy' : 'partly-cloudy';
+              conditionText = condition === 'mostly-cloudy' ? 'Mostly Cloudy' : 'Partly Cloudy';
+              icon = condition === 'mostly-cloudy' ? '🌤️' : '⛅';
+            } else if (hour < 6) {
+              condition = 'partly-cloudy';
+              conditionText = 'Partly Cloudy';
+              icon = '⛅';
+            } else if (hour < 8) {
+              condition = Math.random() > 0.5 ? 'mostly-clear' : 'partly-cloudy';
+              conditionText = condition === 'mostly-clear' ? 'Mostly Clear' : 'Partly Cloudy';
+              icon = condition === 'mostly-clear' ? '🌙' : '⛅';
+            } else {
+              condition = 'partly-cloudy';
+              conditionText = 'Partly Cloudy';
+              icon = '🌙';
+            }
+            
+            dayData.hourlyData.push({
+              time: `${displayHour}:00 ${ampm}`,
+              condition: conditionText,
+              icon: icon,
+              temp: temp,
+              feelsLike: feelsLike
+            });
+          }
+          
+          mockWeather.push(dayData);
+        }
+        
+        setWeatherData(mockWeather);
+      } catch (err) {
+        setError('Failed to fetch weather data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWeatherData();
+  }, [startDate, endDate, location]);
+
+  const getWeatherIcon = (condition) => {
+    switch (condition) {
+      case 'sunny': return '☀️';
+      case 'partly-cloudy': return '⛅';
+      case 'cloudy': return '☁️';
+      case 'rainy': return '🌧️';
+      default: return '☀️';
+    }
+  };
+
+  const getTemperatureColor = (temp) => {
+    if (temp > 90) {
+      return '#d32f2f'; // Red for hot temperatures
+    } else if (temp < 50) {
+      return '#1976d2'; // Blue for cold temperatures
+    }
+    return '#2c3e50'; // Default dark color
+  };
+
+
+  if (loading) {
+    return (
+      <Box sx={{ mt: 6, p: 4, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="body1" sx={{ mt: 2 }}>Loading weather forecast...</Typography>
+      </Box>
+    );
+  }
+
+  if (error || !weatherData) {
+    return null; // Don't show anything if there's an error or no data
+  }
+  // Group days into rows of 3
+  const groupedDays = [];
+  for (let i = 0; i < weatherData.length; i += 3) {
+    groupedDays.push(weatherData.slice(i, i + 3));
+  }
+
+  return (
+    <Box className="weather-section" sx={{ 
+      px: 4,
+      py: 6,
+      backgroundColor: '#f0f8ff'
+    }}>
+      <Typography variant="h6" sx={{ 
+        fontWeight: 600, 
+        mb: 3, 
+        textAlign: 'left', 
+        color: '#2c3e50',
+        fontSize: '1.2rem',
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 1 
+      }}>
+        {/* Weather Icon SVG - Thermometer */}
+        <svg 
+          width="1.2rem" 
+          height="1.2rem" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="#2c3e50" 
+          strokeWidth="1.5" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+        >
+          <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
+          <path d="M12 2v2"/>
+          <path d="M12 18v2"/>
+          <path d="M8 14v4"/>
+          <path d="M16 14v4"/>
+        </svg>
+        Weather Forecast
+        {location && (
+          <Typography 
+            component="span" 
+            sx={{ 
+              ml: 1, 
+              fontSize: '0.8rem', 
+              fontWeight: 400, 
+              color: '#666' 
+            }}
+          >
+            ({location})
+      </Typography>
+        )}
+        </Typography>
+      
+      {/* Weather Data in Rows of 3 Days */}
+      {groupedDays.map((dayGroup, groupIndex) => (
+        <Card key={groupIndex} sx={{ 
+          mb: 3, 
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)',
+          backgroundColor: '#ffffff',
+          color: '#000000'
+        }}>
+          <CardContent sx={{ p: 0 }}>
+            <Grid container>
+              {dayGroup.map((day, dayIndex) => (
+                <Grid 
+                  item 
+                  xs={12} 
+                  md={dayGroup.length === 1 ? 12 : dayGroup.length === 2 ? 6 : 4} 
+                  key={dayIndex}
+                  sx={{ 
+                    borderRight: dayIndex < dayGroup.length - 1 ? '1px solid #e0e0e0' : 'none',
+                    minHeight: '100%'
+                  }}
+                >
+                  {/* Day Header */}
+                  <Box sx={{ 
+                    p: 2, 
+                    borderBottom: '1px solid #f0f0f0',
+                    backgroundColor: '#fafafa',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#2c3e50', fontSize: '1rem' }}>
+                      {day.dayName}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#666', fontSize: '0.75rem' }}>
+                      {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2V4M12 20V22M4 12H2M6.31412 6.31412L4.8999 4.8999M17.6859 6.31412L19.1001 4.8999M6.31412 17.69L4.8999 19.1042M17.6859 17.69L19.1001 19.1042M22 12H20M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12Z" 
+                                stroke="#ff9800" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <Typography variant="caption" sx={{ color: '#ff9800', fontSize: '0.7rem', fontWeight: 500 }}>
+                          {day.sunrise}
+                      </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" 
+                                stroke="#ff5722" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <Typography variant="caption" sx={{ color: '#ff5722', fontSize: '0.7rem', fontWeight: 500 }}>
+                          {day.sunset}
+                      </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Compact Hourly Weather List */}
+                  <Box sx={{ 
+                    p: 2,
+                    backgroundColor: '#ffffff',
+                    color: '#000000'
+                  }}>
+                    {/* Table Header */}
+                    <Grid container sx={{ 
+                      mb: 1, 
+                      pb: 0.5, 
+                      borderBottom: '1px solid #e0e0e0'
+                    }}>
+                      <Grid item xs={3}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#2c3e50', fontSize: '0.7rem' }}>
+                          Time
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={4}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#2c3e50', fontSize: '0.7rem' }}>
+                          Conditions
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={2.5}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#2c3e50', fontSize: '0.7rem' }}>
+                          Temp
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={2.5}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#2c3e50', fontSize: '0.7rem' }}>
+                          Feel
+                        </Typography>
+                      </Grid>
+                    </Grid>
+
+                    {/* Compact Hourly Rows */}
+                    {day.hourlyData.map((hour, hourIndex) => (
+                      <Grid 
+                        container 
+                        key={hourIndex}
+                        alignItems="center"
+                        sx={{ 
+                          py: 0.5,
+                          borderBottom: hourIndex < day.hourlyData.length - 1 ? '1px solid #f5f5f5' : 'none',
+                          backgroundColor: '#ffffff',
+                          color: '#000000',
+                          '&:hover': {
+                            backgroundColor: '#f8f9fa'
+                          }
+                        }}
+                      >
+                        <Grid item xs={3}>
+                          <Typography variant="caption" sx={{ color: '#333333 !important', fontSize: '0.7rem' }}>
+                            {hour.time}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ fontSize: '0.8rem' }}>{hour.icon}</Box>
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                color: '#2c3e50 !important', 
+                                fontSize: '0.65rem',
+                                lineHeight: 1.2,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {hour.condition.replace('Mostly ', 'M.').replace('Partly ', 'P.')}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={2.5}>
+                          <Typography variant="caption" sx={{ 
+                            fontWeight: 600, 
+                            color: getTemperatureColor(hour.temp), 
+                            fontSize: '0.7rem' 
+                          }}>
+                            {hour.temp}°
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={2.5}>
+                          <Typography variant="caption" sx={{ 
+                            fontWeight: 600, 
+                            color: getTemperatureColor(hour.feelsLike), 
+                            fontSize: '0.7rem' 
+                          }}>
+                            {hour.feelsLike}°
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    ))}
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </CardContent>
+        </Card>
+      ))}
+    </Box>
+  );
+};
+
 const Outing = () => {
   const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(false);
   const previewRef = useRef();
   const [outingListExpanded, setOutingListExpanded] = useState(true);
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
 
   // Form state
   const [outingData, setOutingData] = useState({
@@ -101,16 +691,17 @@ const Outing = () => {
     sics: [], // Senior in Charge (Scouts)
     aics: [], // Adult in Charge
     overview: '',
-    schedule: [{ date: '', time: '', activity: '', group: 'All' }],
+    detail: '',
+    scheduleDays: [], // Will be auto-generated when dates are set
     parking: '',
     packingList: '',
-    weatherForecast: '',
     nearbyHospital: '',
     references: '',
     contacts: '',
     notes: '',
     attachments: [],
     images: [], // Uploaded images
+    coverImage: 'forest', // Background image for hero section
     isPublic: true // Visibility setting
   });
 
@@ -126,18 +717,78 @@ const Outing = () => {
   const [displayedOutings, setDisplayedOutings] = useState(10); // For infinite scroll
   const [hasMoreOutings, setHasMoreOutings] = useState(true);
 
-  // Dialog states
-  const [sicDialog, setSicDialog] = useState({ open: false, name: '', role: '' });
-  const [aicDialog, setAicDialog] = useState({ open: false, name: '', role: '' });
+
+  // Real user data from database
+  const [scouts, setScouts] = useState([]);
+  const [adults, setAdults] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
-  // Load outings from Firebase on component mount
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Load outings and users from Firebase on component mount
   useEffect(() => {
     loadOutings();
+    loadUsers();
   }, []);
+
+  // Load users from database and filter by roles
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      console.log('Loading users from database...');
+      const allUsers = await authService.getAllUsers();
+      console.log('All users loaded:', allUsers);
+      
+      // Filter scouts (users with 'scout' role)
+      const scoutUsers = allUsers.filter(user => 
+        user.roles && user.roles.includes('scout') && user.accessStatus === 'approved'
+      ).map(user => ({
+        id: user.id,
+        name: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        rank: user.scoutRank || user.rank || 'Scout', // Use scoutRank field or fallback
+        email: user.email
+      }));
+      
+      // Filter adults (users with 'parent', 'leader', or 'admin' roles)
+      const adultUsers = allUsers.filter(user => 
+        user.roles && (
+          user.roles.includes('parent') || 
+          user.roles.includes('leader') || 
+          user.roles.includes('admin')
+        ) && user.accessStatus === 'approved'
+      ).map(user => ({
+        id: user.id,
+        name: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        role: user.scoutingRole || user.relation || 'Parent/Leader', // Use scoutingRole or relation
+        email: user.email
+      }));
+      
+      console.log('Filtered scouts:', scoutUsers);
+      console.log('Filtered adults:', adultUsers);
+      
+      setScouts(scoutUsers);
+      setAdults(adultUsers);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error loading users. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const loadOutings = async () => {
     try {
@@ -160,8 +811,7 @@ const Outing = () => {
 
   // Filter and search outings
   const filteredOutings = existingOutings.filter(outing => {
-    // Only show public outings
-    if (!outing.isPublic) return false;
+    // Show all outings (both public and private)
     
     // Apply search filter
     if (searchQuery) {
@@ -169,6 +819,8 @@ const Outing = () => {
       const searchableText = [
         outing.eventName,
         outing.destination,
+        outing.startPoint,
+        outing.overview?.replace(/<[^>]*>/g, ''), // Strip HTML tags for search
         outing.sics?.map(sic => sic.name).join(' '),
         outing.aics?.map(aic => aic.name).join(' ')
       ].join(' ').toLowerCase();
@@ -198,7 +850,7 @@ const Outing = () => {
   });
 
   // Apply pagination for infinite scroll
-  const publicOutings = sortedOutings.slice(0, displayedOutings);
+  const displayedOutingsList = sortedOutings.slice(0, displayedOutings);
   
   // Update hasMoreOutings based on available data
   useEffect(() => {
@@ -207,6 +859,55 @@ const Outing = () => {
 
   const loadOutingForEdit = (outing) => {
     setCurrentOutingId(outing.id); // Set the ID for editing
+    
+    // Convert old schedule format to new scheduleDays format if needed
+    let scheduleDays = outing.scheduleDays;
+    if (!scheduleDays && outing.schedule) {
+      // Convert old format to new format
+      scheduleDays = [{
+        id: 'day-1',
+        title: 'Day 1',
+        activities: outing.schedule.map((item, index) => ({
+          id: `activity-${index + 1}`,
+          time: item.time || '',
+          activity: item.activity || '',
+          lead: '' // No lead field in old format
+        }))
+      }];
+    } else if (!scheduleDays) {
+      // Default structure
+      scheduleDays = [{
+        id: 'day-1',
+        title: 'Day 1',
+        activities: [{ id: 'activity-1', time: '', activity: '', lead: '', location: '' }]
+      }];
+    }
+    
+    // Convert SICs and AICs to proper format for autocomplete
+    const formatSICs = (sics) => {
+      if (!sics || !Array.isArray(sics)) return [];
+      return sics.map(sic => {
+        if (typeof sic === 'string') {
+          // Find matching scout from database
+          const scout = scouts.find(s => s.name === sic);
+          return scout || { name: sic, role: 'Scout' };
+        }
+        return sic;
+      });
+    };
+    
+    const formatAICs = (aics) => {
+      if (!aics || !Array.isArray(aics)) return [];
+      return aics.map(aic => {
+        if (typeof aic === 'string') {
+          // Find matching adult from database
+          const adult = adults.find(a => a.name === aic);
+          return adult || { name: aic, role: 'Parent/Leader' };
+        }
+        return aic;
+      });
+    };
+    
     setOutingData({
       eventName: outing.eventName,
       startDateTime: outing.startDateTime,
@@ -214,19 +915,20 @@ const Outing = () => {
       startPoint: outing.startPoint || '',
       destination: outing.destination,
       mapLink: outing.mapLink || '',
-      sics: outing.sics || [],
-      aics: outing.aics || [],
-      overview: outing.overview || '',
-      schedule: outing.schedule || [{ date: '', time: '', activity: '', group: 'All' }],
-      parking: outing.parking || '',
-      packingList: outing.packingList || '',
-      weatherForecast: outing.weatherForecast || '',
-      nearbyHospital: outing.nearbyHospital || '',
-      references: outing.references || '',
-      contacts: outing.contacts || '',
-      notes: outing.notes || '',
+      sics: formatSICs(outing.sics),
+      aics: formatAICs(outing.aics),
+      overview: cleanHtmlContent(outing.overview) || '',
+      detail: cleanHtmlContent(outing.detail) || '',
+      scheduleDays: scheduleDays,
+      parking: cleanHtmlContent(outing.parking) || '',
+      packingList: cleanHtmlContent(outing.packingList) || '',
+      nearbyHospital: cleanHtmlContent(outing.nearbyHospital) || '',
+      references: cleanHtmlContent(outing.references) || '',
+      contacts: cleanHtmlContent(outing.contacts) || '',
+      notes: cleanHtmlContent(outing.notes) || '',
       attachments: outing.attachments || [],
       images: outing.images || [],
+      coverImage: outing.coverImage || 'forest', // Add coverImage field
       isPublic: outing.isPublic
     });
     setTabValue(0); // Switch to edit tab
@@ -244,19 +946,26 @@ const Outing = () => {
       sics: [],
       aics: [],
       overview: '',
-      schedule: [{ date: '', time: '', activity: '', group: 'All' }],
+      detail: '',
+      scheduleDays: [], // Will be auto-generated when dates are set
       parking: '',
       packingList: '',
-      weatherForecast: '',
       nearbyHospital: '',
       references: '',
       contacts: '',
       notes: '',
       attachments: [],
       images: [],
+      coverImage: 'forest', // Default cover image
       isPublic: true
     });
     setTabValue(0); // Switch to edit tab
+  };
+
+  // Simple HTML cleanup for Tiptap (much cleaner than ReactQuill)
+  const cleanHtmlContent = (html) => {
+    if (!html || html.trim() === '') return html;
+    return html.trim();
   };
 
   const handleInputChange = (field, value) => {
@@ -264,6 +973,56 @@ const Outing = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Handle Tiptap blur event (minimal processing needed)
+  const handleRichTextBlur = (field, value) => {
+    const cleanedValue = cleanHtmlContent(value);
+    if (cleanedValue !== value) {
+      setOutingData(prev => ({
+        ...prev,
+        [field]: cleanedValue
+      }));
+    }
+  };
+
+  // Handle date changes and auto-generate schedule days
+  const handleDateChange = (field, value) => {
+    setOutingData(prev => {
+      const updated = {
+        ...prev,
+        [field]: value
+      };
+
+      // Auto-generate schedule days when both dates are set
+      if (field === 'startDateTime' || field === 'endDateTime') {
+        const startDate = field === 'startDateTime' ? value : prev.startDateTime;
+        const endDate = field === 'endDateTime' ? value : prev.endDateTime;
+
+        if (startDate && endDate && startDate instanceof Date && endDate instanceof Date && 
+            !isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && startDate <= endDate) {
+          
+          // Calculate number of days (inclusive of start and end dates)
+          const timeDiff = endDate.getTime() - startDate.getTime();
+          const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both start and end dates
+          
+          // Generate schedule days
+          const newScheduleDays = [];
+          for (let i = 0; i < daysDiff; i++) {
+            newScheduleDays.push({
+              id: `day-${i + 1}`,
+              title: `Day ${i + 1}`,
+              activities: []
+            });
+          }
+          
+          updated.scheduleDays = newScheduleDays;
+          console.log(`Auto-generated ${daysDiff} schedule days for outing`);
+        }
+      }
+
+      return updated;
+    });
   };
 
   const loadMoreOutings = () => {
@@ -316,71 +1075,151 @@ const Outing = () => {
     return outingData.images.length > 0 ? outingData.images : getDefaultImages();
   };
 
-  const addSIC = () => {
-    if (sicDialog.name.trim()) {
-      setOutingData(prev => ({
-        ...prev,
-        sics: [...prev.sics, { name: sicDialog.name, role: sicDialog.role }]
-      }));
-      setSicDialog({ open: false, name: '', role: '' });
-    }
-  };
+  // Schedule management functions
 
-  const removeSIC = (index) => {
+  const addActivity = (dayId) => {
+    const newActivityId = `activity-${Date.now()}`;
+    const newActivity = {
+      id: newActivityId,
+      time: '',
+      activity: '',
+      lead: [], // Initialize as empty array for multiple leads
+      location: ''
+    };
+    
     setOutingData(prev => ({
       ...prev,
-      sics: prev.sics.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addAIC = () => {
-    if (aicDialog.name.trim()) {
-      setOutingData(prev => ({
-        ...prev,
-        aics: [...prev.aics, { name: aicDialog.name, role: aicDialog.role }]
-      }));
-      setAicDialog({ open: false, name: '', role: '' });
-    }
-  };
-
-  const removeAIC = (index) => {
-    setOutingData(prev => ({
-      ...prev,
-      aics: prev.aics.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addScheduleItem = () => {
-    setOutingData(prev => ({
-      ...prev,
-      schedule: [...prev.schedule, { date: '', time: '', activity: '', group: 'All' }]
-    }));
-  };
-
-  const updateScheduleItem = (index, field, value) => {
-    setOutingData(prev => ({
-      ...prev,
-      schedule: prev.schedule.map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
+      scheduleDays: prev.scheduleDays.map(day => 
+        day.id === dayId 
+          ? { ...day, activities: [...day.activities, newActivity] }
+          : day
       )
     }));
   };
 
-  const removeScheduleItem = (index) => {
-    if (outingData.schedule.length > 1) {
-      setOutingData(prev => ({
-        ...prev,
-        schedule: prev.schedule.filter((_, i) => i !== index)
-      }));
-    }
+  const updateActivity = (dayId, updatedActivity) => {
+    setOutingData(prev => ({
+      ...prev,
+      scheduleDays: prev.scheduleDays.map(day => 
+        day.id === dayId 
+          ? { 
+              ...day, 
+              activities: day.activities.map(activity => 
+                activity.id === updatedActivity.id ? updatedActivity : activity
+              )
+            }
+          : day
+      )
+    }));
   };
+
+  const deleteActivity = (dayId, activityId) => {
+    setOutingData(prev => ({
+      ...prev,
+      scheduleDays: prev.scheduleDays.map(day => 
+        day.id === dayId 
+          ? { ...day, activities: day.activities.filter(activity => activity.id !== activityId) }
+          : day
+      )
+    }));
+  };
+
+  const deleteDay = (dayId) => {
+    setOutingData(prev => ({
+      ...prev,
+      scheduleDays: prev.scheduleDays.filter(day => day.id !== dayId)
+    }));
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    // Find the source day and activity
+    let sourceDayId = null;
+    let sourceActivityIndex = -1;
+    let sourceActivity = null;
+
+    for (const day of outingData.scheduleDays) {
+      const activityIndex = day.activities.findIndex(activity => activity.id === activeId);
+      if (activityIndex !== -1) {
+        sourceDayId = day.id;
+        sourceActivityIndex = activityIndex;
+        sourceActivity = day.activities[activityIndex];
+        break;
+      }
+    }
+
+    if (!sourceActivity) return;
+
+    // Find the target day and position
+    let targetDayId = null;
+    let targetActivityIndex = -1;
+
+    for (const day of outingData.scheduleDays) {
+      const activityIndex = day.activities.findIndex(activity => activity.id === overId);
+      if (activityIndex !== -1) {
+        targetDayId = day.id;
+        targetActivityIndex = activityIndex;
+        break;
+      }
+    }
+
+    if (!targetDayId) return;
+
+    setOutingData(prev => {
+      const newScheduleDays = [...prev.scheduleDays];
+
+      // Remove from source
+      const sourceDayIndex = newScheduleDays.findIndex(day => day.id === sourceDayId);
+      newScheduleDays[sourceDayIndex].activities.splice(sourceActivityIndex, 1);
+
+      // Add to target
+      const targetDayIndex = newScheduleDays.findIndex(day => day.id === targetDayId);
+      if (sourceDayId === targetDayId) {
+        // Same day reordering
+        const adjustedTargetIndex = targetActivityIndex > sourceActivityIndex ? targetActivityIndex - 1 : targetActivityIndex;
+        newScheduleDays[targetDayIndex].activities.splice(adjustedTargetIndex, 0, sourceActivity);
+      } else {
+        // Different day
+        newScheduleDays[targetDayIndex].activities.splice(targetActivityIndex, 0, sourceActivity);
+      }
+
+      return {
+        ...prev,
+        scheduleDays: newScheduleDays
+      };
+    });
+  };
+
+
+
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      // Clean HTML content before saving (Tiptap generates much cleaner HTML)
+      const cleanedOutingData = {
+        ...outingData,
+        overview: cleanHtmlContent(outingData.overview),
+        detail: cleanHtmlContent(outingData.detail),
+        packingList: cleanHtmlContent(outingData.packingList),
+        parking: cleanHtmlContent(outingData.parking),
+        nearbyHospital: cleanHtmlContent(outingData.nearbyHospital),
+        notes: cleanHtmlContent(outingData.notes),
+        contacts: cleanHtmlContent(outingData.contacts),
+        references: cleanHtmlContent(outingData.references)
+      };
+
       if (currentOutingId) {
         // Update existing outing
-        await outingService.updateOuting(currentOutingId, outingData);
+        await outingService.updateOuting(currentOutingId, cleanedOutingData);
         setSnackbar({
           open: true,
           message: 'Outing plan updated successfully!',
@@ -388,7 +1227,7 @@ const Outing = () => {
         });
       } else {
         // Create new outing
-        const newOutingId = await outingService.createOuting(outingData);
+        const newOutingId = await outingService.createOuting(cleanedOutingData);
         setCurrentOutingId(newOutingId);
         setSnackbar({
           open: true,
@@ -414,77 +1253,6 @@ const Outing = () => {
     }
   };
 
-  const exportToPDF = async () => {
-    setLoading(true);
-    try {
-      const element = previewRef.current;
-      
-      // Show static map images and hide iframes for PDF generation
-      const iframes = element.querySelectorAll('.map-iframe');
-      const staticImages = element.querySelectorAll('.map-static-image');
-      
-      // Hide iframes and show static images
-      iframes.forEach(iframe => {
-        iframe.style.display = 'none';
-      });
-      
-      staticImages.forEach(img => {
-        img.style.display = 'block';
-      });
-      
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        ignoreElements: (element) => {
-          return element.tagName === 'IFRAME';
-        }
-      });
-      
-      // Restore original display states
-      iframes.forEach(iframe => {
-        iframe.style.display = 'block';
-      });
-      
-      staticImages.forEach(img => {
-        img.style.display = 'none';
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      
-      let position = 0;
-      
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      
-      pdf.save(`${outingData.eventName || 'Outing-Plan'}.pdf`);
-      setSnackbar({
-        open: true,
-        message: 'PDF exported successfully!',
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      setSnackbar({
-        open: true,
-        message: 'Error exporting PDF. Please try again.',
-        severity: 'error'
-      });
-    }
-    setLoading(false);
-  };
 
   const formatDateTime = (dateTime) => {
     if (!dateTime) return 'Not specified';
@@ -498,13 +1266,115 @@ const Outing = () => {
     }
   };
 
-  const groupScheduleByDate = () => {
-    const grouped = {};
-    outingData.schedule.forEach(item => {
-      if (!grouped[item.date]) {
-        grouped[item.date] = [];
+  // Form validation function
+  const isFormValid = () => {
+    // Check required fields
+    const requiredFields = [
+      outingData.eventName?.trim(),
+      outingData.startDateTime,
+      outingData.endDateTime,
+      outingData.overview?.trim(),
+      outingData.detail?.trim(),
+      outingData.packingList?.trim(),
+      outingData.parking?.trim(), // Transportation
+      outingData.nearbyHospital?.trim(), // Emergency Plan
+    ];
+
+    // Check if all required fields have values
+    const allFieldsFilled = requiredFields.every(field => {
+      if (field instanceof Date) {
+        return !isNaN(field.getTime());
       }
-      grouped[item.date].push(item);
+      return field && field !== '';
+    });
+
+    // Check if schedule has at least one day with activities
+    const hasSchedule = outingData.scheduleDays && 
+      outingData.scheduleDays.length > 0 && 
+      outingData.scheduleDays.some(day => 
+        day.activities && day.activities.length > 0 && 
+        day.activities.some(activity => 
+          activity.activity && activity.activity.trim() !== ''
+        )
+      );
+
+    return allFieldsFilled && hasSchedule;
+  };
+
+  // Generate date for a specific day based on start date
+  const generateDayDate = (dayIndex) => {
+    if (!outingData.startDateTime) {
+      return '';
+    }
+    
+    try {
+      const startDate = new Date(outingData.startDateTime);
+      // Reset time to avoid timezone issues with date-only operations
+      startDate.setHours(0, 0, 0, 0);
+      const dayDate = new Date(startDate);
+      dayDate.setDate(startDate.getDate() + dayIndex);
+      
+      return dayDate.toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: '2-digit'
+      });
+    } catch (error) {
+      return '';
+    }
+  };
+
+  // Highlight search terms in text
+  const highlightText = (text, searchQuery) => {
+    if (!searchQuery || !text) return text;
+    
+    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <Box
+          component="span"
+          key={index}
+          sx={{
+            backgroundColor: '#ffeb3b',
+            color: '#000',
+            fontWeight: 'bold'
+          }}
+        >
+          {part}
+        </Box>
+      ) : part
+    );
+  };
+
+  const groupScheduleByDate = () => {
+    if (!outingData.scheduleDays || !Array.isArray(outingData.scheduleDays)) {
+      return {};
+    }
+    
+    const grouped = {};
+    outingData.scheduleDays.forEach(day => {
+      if (day.activities && Array.isArray(day.activities)) {
+        day.activities.forEach(activity => {
+          const dayTitle = day.title || 'Day';
+          if (!grouped[dayTitle]) {
+            grouped[dayTitle] = [];
+          }
+          // Handle lead field - convert array to string for display
+          const leadDisplay = Array.isArray(activity.lead) 
+            ? activity.lead.map(lead => lead.name || lead).join(', ')
+            : activity.lead || '';
+
+          grouped[dayTitle].push({
+            time: activity.time,
+            activity: activity.activity,
+            lead: leadDisplay,
+            location: activity.location || '',
+            group: 'All' // Default group for compatibility
+          });
+        });
+      }
     });
     return grouped;
   };
@@ -548,7 +1418,7 @@ const Outing = () => {
             {/* Search and Filter Controls */}
             <Box sx={{ mb: 3 }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     placeholder="Search outings..."
@@ -563,23 +1433,25 @@ const Outing = () => {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid item xs={12} md={2.5}>
                   <DateTimePicker
-                    label="Start Date From"
+                    label="Start"
                     value={startDateFilter}
                     onChange={(value) => setStartDateFilter(value)}
+                    views={['year', 'month', 'day']}
                     renderInput={(params) => <TextField {...params} fullWidth size="small" />}
                   />
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid item xs={12} md={2.5}>
                   <DateTimePicker
-                    label="Start Date To"
+                    label="End"
                     value={endDateFilter}
                     onChange={(value) => setEndDateFilter(value)}
+                    views={['year', 'month', 'day']}
                     renderInput={(params) => <TextField {...params} fullWidth size="small" />}
                   />
                 </Grid>
-                <Grid item xs={12} md={2}>
+                <Grid item xs={12} md={1}>
                   <Button
                     variant="outlined"
                     startIcon={<FilterIcon />}
@@ -597,11 +1469,11 @@ const Outing = () => {
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
                 <CircularProgress />
               </Box>
-            ) : publicOutings.length === 0 ? (
+            ) : displayedOutingsList.length === 0 ? (
               <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
                 {searchQuery || startDateFilter || endDateFilter 
                   ? 'No outings match your search criteria.' 
-                  : 'No public outings available. Create your first outing!'
+                  : 'No outings available. Create your first outing!'
                 }
               </Typography>
             ) : (
@@ -610,31 +1482,32 @@ const Outing = () => {
                   <Table stickyHeader>
                     <TableHead>
                       <TableRow>
+                        <TableCell><strong>Visibility</strong></TableCell>
                         <TableCell><strong>Outing Name</strong></TableCell>
-                        <TableCell><strong>Start Date</strong></TableCell>
-                        <TableCell><strong>End Date</strong></TableCell>
-                        <TableCell><strong>Location with Map Link</strong></TableCell>
+                        <TableCell><strong>Start</strong></TableCell>
+                        <TableCell><strong>End</strong></TableCell>
+                        <TableCell><strong>Location</strong></TableCell>
                         <TableCell><strong>SICs</strong></TableCell>
                         <TableCell><strong>AICs</strong></TableCell>
                         <TableCell><strong>Actions</strong></TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {publicOutings.map((outing) => (
+                      {displayedOutingsList.map((outing) => (
                         <TableRow key={outing.id} hover>
                           <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2" fontWeight="medium">
-                                {outing.eventName}
-                              </Typography>
-                              <Chip 
-                                icon={<VisibilityIcon />} 
-                                label="Public" 
-                                size="small" 
-                                color="success" 
-                                variant="outlined"
-                              />
-                            </Box>
+                            <Chip 
+                              icon={outing.isPublic ? <VisibilityIcon /> : <VisibilityOffIcon />} 
+                              label={outing.isPublic ? "Public" : "Private"} 
+                              size="small" 
+                              color={outing.isPublic ? "success" : "error"} 
+                              variant="outlined"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight="medium">
+                              {highlightText(outing.eventName, searchQuery)}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
@@ -647,27 +1520,33 @@ const Outing = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Box>
-                              <Typography variant="body2">
-                                {outing.destination || 'Not specified'}
+                            {outing.destination ? (
+                              <Link
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(outing.destination)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{ 
+                                  color: 'primary.main',
+                                  textDecoration: 'none',
+                                  '&:hover': {
+                                    textDecoration: 'underline'
+                                  }
+                                }}
+                              >
+                                <Typography variant="body2">
+                                  {highlightText(outing.destination, searchQuery)}
+                                </Typography>
+                              </Link>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                Not specified
                               </Typography>
-                              {outing.mapLink && (
-                                <Link
-                                  href={outing.mapLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}
-                                >
-                                  <OpenInNewIcon fontSize="small" />
-                                  <Typography variant="caption">View Map</Typography>
-                                </Link>
-                              )}
-                            </Box>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
                               {outing.sics?.length > 0 
-                                ? outing.sics.map(sic => sic.name).join(', ')
+                                ? highlightText(outing.sics.map(sic => sic.name).join(', '), searchQuery)
                                 : 'None assigned'
                               }
                             </Typography>
@@ -675,7 +1554,7 @@ const Outing = () => {
                           <TableCell>
                             <Typography variant="body2">
                               {outing.aics?.length > 0 
-                                ? outing.aics.map(aic => aic.name).join(', ')
+                                ? highlightText(outing.aics.map(aic => aic.name).join(', '), searchQuery)
                                 : 'None assigned'
                               }
                             </Typography>
@@ -689,18 +1568,6 @@ const Outing = () => {
                                   color="primary"
                                 >
                                   <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Preview/Export">
-                                <IconButton 
-                                  size="small"
-                                  onClick={() => {
-                                    loadOutingForEdit(outing);
-                                    setTabValue(1);
-                                  }}
-                                  color="secondary"
-                                >
-                                  <PreviewIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </Box>
@@ -748,338 +1615,695 @@ const Outing = () => {
 
           {/* Edit Tab */}
           <TabPanel value={tabValue} index={0}>
-            <Grid container spacing={3}>
-              {/* Basic Information */}
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography variant="h6" gutterBottom>
-                    Basic Information
+            <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+              {/* Header with Visibility Toggle */}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                pb: 4
+              }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2' }}>
+                  Basic Information
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {outingData.isPublic ? 'Public' : 'Private'}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={outingData.isPublic}
-                          onChange={(e) => handleInputChange('isPublic', e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {outingData.isPublic ? <VisibilityIcon /> : <VisibilityOffIcon />}
-                          <Typography>
-                            {outingData.isPublic ? 'Public' : 'Private'}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                    <Tooltip title={outingData.isPublic ? 'Everyone can see this outing' : 'Only SICs and AICs can see this outing'}>
-                      <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                        {outingData.isPublic ? '(Visible to everyone)' : '(SICs & AICs only)'}
-                      </Typography>
-                    </Tooltip>
-                  </Box>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Event Name"
-                  value={outingData.eventName}
-                  onChange={(e) => handleInputChange('eventName', e.target.value)}
-                  required
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Start Point"
-                  value={outingData.startPoint}
-                  onChange={(e) => handleInputChange('startPoint', e.target.value)}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <DateTimePicker
-                  label="Start Date & Time"
-                  value={outingData.startDateTime}
-                  onChange={(value) => handleInputChange('startDateTime', value)}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <DateTimePicker
-                  label="End Date & Time"
-                  value={outingData.endDateTime}
-                  onChange={(value) => handleInputChange('endDateTime', value)}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Destination"
-                  value={outingData.destination}
-                  onChange={(e) => handleInputChange('destination', e.target.value)}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Map Embed Code"
-                  value={outingData.mapLink}
-                  onChange={(e) => handleInputChange('mapLink', e.target.value)}
-                  placeholder="Paste Google Maps embed code here (from Google Maps → Share → Embed a map)"
-                  helperText="Go to Google Maps → Search location → Share → Embed a map → Copy the full <iframe> code"
-                />
-              </Grid>
-
-              {/* SICs Section */}
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  <PeopleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Senior in Charge (Scouts)
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {outingData.sics.map((sic, index) => (
-                    <Chip
-                      key={index}
-                      label={`${sic.name} (${sic.role})`}
-                      onDelete={() => removeSIC(index)}
-                      color="primary"
-                      variant="outlined"
-                    />
-                  ))}
-                  <Chip
-                    icon={<AddIcon />}
-                    label="Add SIC"
-                    onClick={() => setSicDialog({ open: true, name: '', role: '' })}
+                  <Switch
+                    checked={outingData.isPublic}
+                    onChange={(e) => handleInputChange('isPublic', e.target.checked)}
                     color="primary"
-                    clickable
+                  />
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                    {outingData.isPublic ? '(Visible to everyone)' : '(SICs & AICs only)'}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Form Fields */}
+              <Grid container spacing={3}>
+                {/* Row 1: Event Name (2 columns), Start Date (1 column), End Date (1 column) */}
+                <Grid item xs={12} sm={6} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Event Name"
+                    value={outingData.eventName}
+                    onChange={(e) => handleInputChange('eventName', e.target.value)}
+                    required
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={6} sm={3} md={3}>
+                  <DatePicker
+                    label="Start Date *"
+                    value={outingData.startDateTime}
+                    onChange={(value) => handleDateChange('startDateTime', value)}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        fullWidth 
+                        required
+                        variant="outlined"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={6} sm={3} md={3}>
+                  <DatePicker
+                    label="End Date *"
+                    value={outingData.endDateTime}
+                    onChange={(value) => handleDateChange('endDateTime', value)}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        fullWidth 
+                        required
+                        variant="outlined"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                {/* Row 2: Departure Location (2 columns), Destination (2 columns) */}
+                <Grid item xs={12} sm={6} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Departure Location Address"
+                    value={outingData.startPoint}
+                    onChange={(e) => handleInputChange('startPoint', e.target.value)}
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Destination Address"
+                    value={outingData.destination}
+                    onChange={(e) => handleInputChange('destination', e.target.value)}
+                    required
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                </Grid>
+
+                {/* Row 3: Map Embed Code (4 columns & 2 rows height) */}
+                <Grid item xs={12}>
+                  <Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={8}
+                    label="Map Embed Code"
+                    value={outingData.mapLink}
+                    onChange={(e) => handleInputChange('mapLink', e.target.value)}
+                    required
+                    placeholder="Paste Google Maps embed code here"
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => setHelpDialogOpen(true)}
+                        sx={{ mr: 1, p: 0.5 }}
+                      >
+                        <InfoIcon sx={{ fontSize: 16, color: '#666' }} />
+                      </IconButton>
+                      <Typography variant="caption" sx={{ color: '#666' }}>
+                        Go to{' '}
+                        <Link 
+                          href="https://maps.google.com" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          sx={{ color: '#1976d2', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                        >
+                          Google Maps
+                        </Link>
+                        {' '}→ Search location → Share → Embed a map → Copy the full &lt;iframe&gt; code
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+
+                {/* Cover Background Image Picker */}
+                <Grid item xs={12}>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: '#333' }}>
+                      Cover Background Image
+                    </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      gap: 2, 
+                      flexWrap: 'wrap',
+                      justifyContent: { xs: 'center', sm: 'flex-start' }
+                    }}>
+                      {[
+                        { id: 'biking', name: 'Biking', url: 'https://images.unsplash.com/photo-1571068316344-75bc76f77890?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'snow', name: 'Snow', url: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'hike', name: 'Hike', url: 'https://images.unsplash.com/photo-1533873984035-25970ab07461?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'mountain', name: 'Mountain', url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'rafting', name: 'Rafting', url: 'https://plus.unsplash.com/premium_photo-1661891887710-0528c1d76b92?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'sea', name: 'Sea', url: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'camp', name: 'Camp', url: 'https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'backpack', name: 'Backpack', url: 'https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'forest', name: 'Forest', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'canyon', name: 'Canyon', url: 'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'tropical', name: 'Tropical', url: 'https://images.unsplash.com/photo-1509233725247-49e657c54213?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'bridge', name: 'Bridge', url: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'beach', name: 'Beach', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'trail', name: 'Trail', url: 'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'city', name: 'City', url: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' },
+                        { id: 'sport', name: 'Sport', url: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60' }
+                      ].map((image) => (
+                        <Box
+                          key={image.id}
+                          onClick={() => handleInputChange('coverImage', image.id)}
+                          sx={{
+                            width: 120,
+                            height: 80,
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            border: outingData.coverImage === image.id ? '3px solid #1976d2' : '2px solid #e0e0e0',
+                            transition: 'all 0.2s ease',
+                            position: 'relative',
+                            backgroundImage: `url(${image.url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            '&:hover': {
+                              border: '3px solid #1976d2',
+                              transform: 'scale(1.02)'
+                            }
+                          }}
+                        >
+                          <Box sx={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            color: 'white',
+                            padding: '4px 8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            textAlign: 'center'
+                          }}>
+                            {image.name}
+                          </Box>
+                          {outingData.coverImage === image.id && (
+                            <Box sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              backgroundColor: '#1976d2',
+                              borderRadius: '50%',
+                              width: 20,
+                              height: 20,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                              </svg>
+                            </Box>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Leadership Section */}
+              <Box sx={{ mt: 6, mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <PeopleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Scout In Charge
+                </Typography>
+                <Box sx={{ 
+                  p: 3,
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: 2,
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <Autocomplete
+                    multiple
+                    options={scouts}
+                    getOptionLabel={(option) => `${option.name} (${option.rank})`}
+                    value={outingData.sics}
+                    onChange={(event, newValue) => {
+                      setOutingData(prev => ({
+                        ...prev,
+                        sics: newValue.map(scout => ({ name: scout.name, role: scout.rank }))
+                      }));
+                    }}
+                    isOptionEqualToValue={(option, value) => 
+                      option.name === value.name && option.rank === value.role
+                    }
+                    loading={loadingUsers}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Scouts in Charge (SICs)"
+                        placeholder={loadingUsers ? "Loading scouts..." : "Type to search scouts..."}
+                        required
+                        variant="outlined"
+                        sx={{ borderRadius: 2 }}
+                        helperText={scouts.length === 0 && !loadingUsers ? "No scouts found. Please ensure users are registered with 'scout' role." : ""}
+                      />
+                    )}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => {
+                        const { key, ...chipProps } = getTagProps({ index });
+                        return (
+                        <Chip
+                            key={option.id || option.name || index}
+                          label={`${option.name} (${option.role})`}
+                            {...chipProps}
+                          color="primary"
+                          variant="filled"
+                          sx={{ 
+                            height: 40,
+                              fontSize: '1.0rem',
+                            '& .MuiChip-deleteIcon': {
+                              fontSize: '1.1rem'
+                            }
+                          }}
+                        />
+                        );
+                      })
+                    }
+                    sx={{ mb: 2 }}
                   />
                 </Box>
-              </Grid>
+              </Box>
 
-              {/* AICs Section */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Adult in Charge
+              {/* Adult in Charge Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <PeopleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Adult In Charge
                 </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {outingData.aics.map((aic, index) => (
-                    <Chip
-                      key={index}
-                      label={`${aic.name} (${aic.role})`}
-                      onDelete={() => removeAIC(index)}
-                      color="secondary"
-                      variant="outlined"
-                    />
-                  ))}
-                  <Chip
-                    icon={<AddIcon />}
-                    label="Add AIC"
-                    onClick={() => setAicDialog({ open: true, name: '', role: '' })}
-                    color="secondary"
-                    clickable
+                <Box sx={{ 
+                  p: 3,
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: 2,
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <Autocomplete
+                    multiple
+                    options={adults}
+                    getOptionLabel={(option) => `${option.name} (${option.role})`}
+                    value={outingData.aics}
+                    onChange={(event, newValue) => {
+                      setOutingData(prev => ({
+                        ...prev,
+                        aics: newValue.map(adult => ({ name: adult.name, role: adult.role }))
+                      }));
+                    }}
+                    isOptionEqualToValue={(option, value) => 
+                      option.name === value.name && option.role === value.role
+                    }
+                    loading={loadingUsers}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Adults in Charge (AICs)"
+                        placeholder={loadingUsers ? "Loading adults..." : "Type to search adults/parents..."}
+                        required
+                        variant="outlined"
+                        sx={{ borderRadius: 2 }}
+                        helperText={adults.length === 0 && !loadingUsers ? "No adults found. Please ensure users are registered with 'parent', 'leader', or 'admin' role." : ""}
+                      />
+                    )}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => {
+                        const { key, ...chipProps } = getTagProps({ index });
+                        return (
+                        <Chip
+                            key={option.id || option.name || index}
+                          label={`${option.name} (${option.role})`}
+                            {...chipProps}
+                          color="success"
+                          variant="filled"
+                          sx={{ 
+                            height: 40,
+                              fontSize: '1.0rem',
+                            '& .MuiChip-deleteIcon': {
+                              fontSize: '1.1rem'
+                            }
+                          }}
+                        />
+                        );
+                      })
+                    }
+                    sx={{ mb: 2 }}
                   />
                 </Box>
-              </Grid>
+              </Box>
 
-              {/* Overview */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="Overview"
-                  value={outingData.overview}
-                  onChange={(e) => handleInputChange('overview', e.target.value)}
-                  placeholder="Describe the purpose and goals of this outing..."
-                />
-              </Grid>
-
-              {/* Schedule */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Schedule
+              {/* Overview Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <DescriptionIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Overview *
                 </Typography>
-                {outingData.schedule.map((item, index) => (
-                  <Card key={index} sx={{ mb: 2 }}>
-                    <CardContent>
-                      <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={2}>
-                          <TextField
-                            fullWidth
-                            label="Date"
-                            type="date"
-                            value={item.date}
-                            onChange={(e) => updateScheduleItem(index, 'date', e.target.value)}
-                            InputLabelProps={{ shrink: true }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={2}>
-                          <TextField
-                            fullWidth
-                            label="Time"
-                            type="time"
-                            value={item.time}
-                            onChange={(e) => updateScheduleItem(index, 'time', e.target.value)}
-                            InputLabelProps={{ shrink: true }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <TextField
-                            fullWidth
-                            label="Activity"
-                            value={item.activity}
-                            onChange={(e) => updateScheduleItem(index, 'activity', e.target.value)}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={2}>
-                          <FormControl fullWidth>
-                            <InputLabel>Group</InputLabel>
-                            <Select
-                              value={item.group}
-                              label="Group"
-                              onChange={(e) => updateScheduleItem(index, 'group', e.target.value)}
-                            >
-                              <MenuItem value="All">All</MenuItem>
-                              <MenuItem value="Eagles">Eagles</MenuItem>
-                              <MenuItem value="Hawks">Hawks</MenuItem>
-                              <MenuItem value="Dragons">Dragons</MenuItem>
-                              <MenuItem value="Leaders">Leaders</MenuItem>
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        <Grid item xs={12} sm={2}>
-                          <IconButton
-                            onClick={() => removeScheduleItem(index)}
-                            disabled={outingData.schedule.length === 1}
-                            color="error"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                ))}
-                <Button
-                  startIcon={<AddIcon />}
-                  onClick={addScheduleItem}
-                  variant="outlined"
-                  sx={{ mb: 2 }}
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
+                    value={outingData.overview}
+                    onChange={(value) => handleInputChange('overview', value)}
+                    onBlur={(value) => handleRichTextBlur('overview', value)}
+                    placeholder="Describe the purpose and goals of this outing..."
+                    minHeight="150px"
+                  />
+                </Box>
+              </Box>
+
+              {/* Detail Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <AssignmentIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Detail *
+                </Typography>
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
+                    value={outingData.detail}
+                    onChange={(value) => handleInputChange('detail', value)}
+                    onBlur={(value) => handleRichTextBlur('detail', value)}
+                    placeholder="Provide detailed information about this outing..."
+                    minHeight="150px"
+                  />
+                </Box>
+              </Box>
+
+              {/* Schedule Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <ScheduleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Schedule *
+                </Typography>
+                
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  Add Schedule Item
-                </Button>
-              </Grid>
+                  <Box sx={{ 
+                    backgroundColor: '#f8f9fa', 
+                    borderRadius: 2, 
+                    p: 3, 
+                    border: '1px solid #e0e0e0' 
+                  }}>
+                    {!outingData.scheduleDays || outingData.scheduleDays.length === 0 ? (
+                      <Box sx={{ 
+                        p: 4, 
+                        textAlign: 'center', 
+                        color: 'text.secondary',
+                        backgroundColor: 'white',
+                        borderRadius: 2,
+                        border: '2px dashed #e0e0e0'
+                      }}>
+                        <Typography variant="body1" sx={{ mb: 2 }}>
+                          📅 Schedule days will be automatically generated
+                        </Typography>
+                        <Typography variant="body2">
+                          Set both Start Date and End Date above to create day containers
+                        </Typography>
+                      </Box>
+                    ) : (
+                      (outingData.scheduleDays || []).map((day, dayIndex) => {
+                      const dayDate = generateDayDate(dayIndex);
+                      return (
+                        <Box key={day.id} sx={{ 
+                          backgroundColor: 'white',
+                          borderRadius: 3,
+                          border: '2px solid #d7e5f2',
+                          overflow: 'hidden',
+                          mb: 4
+                        }}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            px: 3,
+                            py: '10px',
+                            backgroundColor: '#d7e5f2',
+                            color: '#2c3e50'
+                          }}>
+                            <Box>
+                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                {day.title}
+                                {dayDate && (
+                                  <Typography component="span" sx={{ ml: 1, opacity: 0.9, fontSize: '0.9em' }}>
+                                    ({dayDate})
+                                  </Typography>
+                                )}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Button
+                                startIcon={<AddIcon />}
+                                onClick={() => addActivity(day.id)}
+                                variant="contained"
+                                size="small"
+                                sx={{ 
+                                  mr: 1,
+                                  backgroundColor: '#2c3e50',
+                                  color: 'white',
+                                  borderRadius: '5px',
+                                  textTransform: 'none',
+                                  padding: '5px 10px',
+                                  '&:hover': {
+                                    backgroundColor: '#34495e'
+                                  }
+                                }}
+                              >
+                                Add Activity
+                              </Button>
+                              {outingData.scheduleDays.length > 1 && (
+                                <IconButton
+                                  onClick={() => deleteDay(day.id)}
+                                  size="small"
+                                  sx={{ 
+                                    color: '#2c3e50',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(44,62,80,0.1)'
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              )}
+                            </Box>
+                          </Box>
+                          
+                          <Box sx={{ p: 3 }}>
+                            <SortableContext 
+                              items={day.activities.map(activity => activity.id)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {day.activities.map((activity) => (
+                                <SortableActivityItem
+                                  key={activity.id}
+                                  activity={activity}
+                                  onUpdate={(updatedActivity) => updateActivity(day.id, updatedActivity)}
+                                  onDelete={(activityId) => deleteActivity(day.id, activityId)}
+                                  scouts={scouts}
+                                />
+                              ))}
+                            </SortableContext>
+                            
+                            {day.activities.length === 0 && (
+                              <Box sx={{ 
+                                p: 4, 
+                                textAlign: 'center', 
+                                color: 'text.secondary',
+                                backgroundColor: '#f9f9f9',
+                                borderRadius: 2,
+                                border: '2px dashed #e0e0e0'
+                              }}>
+                                <Typography variant="body2">
+                                  No activities yet. Click "Add Activity" to get started.
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      );
+                    }))}
+                    
+                  </Box>
+                </DndContext>
+              </Box>
 
-              {/* Additional Information */}
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  Additional Information
+              {/* Additional Information Section */}
+              {/* Packing List Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <BackpackIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Packing List *
                 </Typography>
-              </Grid>
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
+                    value={outingData.packingList}
+                    onChange={(value) => handleInputChange('packingList', value)}
+                    onBlur={(value) => handleRichTextBlur('packingList', value)}
+                    placeholder="Items to bring, clothing recommendations, gear requirements..."
+                    minHeight="120px"
+                  />
+                </Box>
+              </Box>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Parking"
+              {/* Transportation Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <DirectionsCarIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Transportation *
+                </Typography>
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
                   value={outingData.parking}
-                  onChange={(e) => handleInputChange('parking', e.target.value)}
-                  placeholder="Parking instructions and location..."
-                />
-              </Grid>
+                    onChange={(value) => handleInputChange('parking', value)}
+                    onBlur={(value) => handleRichTextBlur('parking', value)}
+                    placeholder="Carpool arrangements, public transit options, parking information, driving directions..."
+                    minHeight="120px"
+                  />
+                </Box>
+              </Box>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Packing List"
-                  value={outingData.packingList}
-                  onChange={(e) => handleInputChange('packingList', e.target.value)}
-                  placeholder="Items to bring, clothing recommendations..."
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Weather Forecast"
-                  value={outingData.weatherForecast}
-                  onChange={(e) => handleInputChange('weatherForecast', e.target.value)}
-                  placeholder="Expected weather conditions..."
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Nearby Hospital"
+              {/* Emergency Plan Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <LocalHospitalIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Emergency Plan *
+                </Typography>
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
                   value={outingData.nearbyHospital}
-                  onChange={(e) => handleInputChange('nearbyHospital', e.target.value)}
-                  placeholder="Emergency medical facilities nearby..."
-                />
-              </Grid>
+                    onChange={(value) => handleInputChange('nearbyHospital', value)}
+                    onBlur={(value) => handleRichTextBlur('nearbyHospital', value)}
+                    placeholder="Emergency procedures, nearby hospitals, medical facilities..."
+                    minHeight="120px"
+                  />
+                </Box>
+              </Box>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="References"
-                  value={outingData.references}
-                  onChange={(e) => handleInputChange('references', e.target.value)}
-                  placeholder="Websites, guides, or other references..."
-                />
-              </Grid>
+              {/* Special Instructions Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <NotificationImportantIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Special Instructions
+                </Typography>
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
+                    value={outingData.notes}
+                    onChange={(value) => handleInputChange('notes', value)}
+                    onBlur={(value) => handleRichTextBlur('notes', value)}
+                    placeholder="Special instructions, important notes, rules and regulations..."
+                    minHeight="120px"
+                  />
+                </Box>
+              </Box>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Contacts"
+              {/* Additional Contacts Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <ContactPhoneIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Additional Contacts
+                </Typography>
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
                   value={outingData.contacts}
-                  onChange={(e) => handleInputChange('contacts', e.target.value)}
-                  placeholder="Emergency contacts, facility contacts..."
-                />
-              </Grid>
+                    onChange={(value) => handleInputChange('contacts', value)}
+                    onBlur={(value) => handleRichTextBlur('contacts', value)}
+                    placeholder="Emergency contacts, facility contacts, local authorities..."
+                    minHeight="120px"
+                  />
+                </Box>
+              </Box>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="Notes"
-                  value={outingData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  placeholder="Additional notes, special instructions..."
-                />
-              </Grid>
+              {/* References Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <MenuBookIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  References
+                </Typography>
+                <Box sx={{ 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 2
+                }}>
+                  <TiptapEditor
+                    value={outingData.references}
+                    onChange={(value) => handleInputChange('references', value)}
+                    onBlur={(value) => handleRichTextBlur('references', value)}
+                    placeholder="Websites, guides, maps, or other helpful references..."
+                    minHeight="120px"
+                  />
+                </Box>
+              </Box>
+
 
               {/* Image Upload Section */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  📸 Outing Images
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                  <CameraAltIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Outing Images
                 </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
                   Upload photos to showcase your outing. These will be displayed in the preview template.
                 </Typography>
                 
@@ -1163,684 +2387,246 @@ const Outing = () => {
                     ))}
                   </Grid>
                 )}
-              </Grid>
+              </Box>
 
-              {/* Submit Button */}
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleSubmit}
-                    disabled={loading || !outingData.eventName}
-                    sx={{ minWidth: 200 }}
-                  >
-                    {loading 
-                      ? (currentOutingId ? 'Updating...' : 'Saving...') 
-                      : (currentOutingId ? 'Update Outing Plan' : 'Save Outing Plan')
+            </Box>
+
+            {/* Sticky Submit Button */}
+            <Box sx={{ 
+              position: 'sticky',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: 'white',
+              borderTop: '1px solid #e0e0e0',
+              boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+              p: 3,
+              display: 'flex',
+              justifyContent: 'center',
+              zIndex: 1000
+            }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleSubmit}
+                disabled={loading || !isFormValid()}
+                  sx={{ 
+                  minWidth: 250,
+                    height: 48,
+                    borderRadius: 3,
+                    backgroundColor: '#1976d2',
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                    '&:hover': {
+                    backgroundColor: '#1565c0',
+                    boxShadow: '0 6px 16px rgba(25, 118, 210, 0.4)'
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#ccc',
+                    boxShadow: 'none'
                     }
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
+                  }}
+                >
+                  {loading 
+                    ? (currentOutingId ? 'Updating...' : 'Saving...') 
+                  : !isFormValid()
+                    ? 'Complete Required Fields to Save'
+                    : (currentOutingId ? 'Update Outing Plan' : 'Save Outing Plan')
+                  }
+                </Button>
+            </Box>
           </TabPanel>
 
           {/* Preview Tab */}
           <TabPanel value={tabValue} index={1}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mb: 2 }}>
               <Button
-                variant="contained"
-                startIcon={<DownloadIcon />}
-                onClick={exportToPDF}
-                disabled={loading}
+                variant="outlined"
+                startIcon={<OpenInNewIcon />}
+                onClick={() => {
+                  const eventId = currentOutingId || 'preview';
+                  const liveViewUrl = `/outing/${eventId}`;
+                  window.open(liveViewUrl, '_blank', 'width=1200,height=800');
+                }}
                 sx={{ 
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
+                  borderColor: '#1976d2',
+                  color: '#1976d2',
                   px: 3,
                   py: 1.5,
                   borderRadius: 2,
-                  boxShadow: '0 4px 15px 0 rgba(102, 126, 234, 0.3)',
                   '&:hover': {
-                    boxShadow: '0 6px 20px 0 rgba(102, 126, 234, 0.4)',
+                    backgroundColor: '#1976d2',
+                    color: 'white',
                     transform: 'translateY(-1px)'
                   }
                 }}
               >
-                {loading ? 'Generating PDF...' : 'Export PDF'}
+                Live View
               </Button>
             </Box>
 
-            <Paper 
-              ref={previewRef}
-              sx={{ 
-                backgroundColor: '#fff',
-                minHeight: '800px',
-                boxShadow: 'none',
-                borderRadius: 0,
-                overflow: 'hidden'
-              }}
-            >
-              {/* Bold Hero Section with Large Image */}
-              <Box sx={{ 
-                position: 'relative',
-                height: '100vh',
-                minHeight: '600px',
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${getDisplayImages()[0]?.url})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundAttachment: 'fixed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white'
-              }}>
-
-                {/* Main Hero Content */}
-                <Box sx={{ textAlign: 'center', px: 4 }}>
-                  <Typography 
-                    variant="h1" 
-                    component="h1" 
-                    sx={{ 
-                      fontSize: { xs: '3rem', md: '5rem', lg: '6rem' },
-                      fontWeight: 900,
-                      letterSpacing: '-0.04em',
-                      lineHeight: 0.9,
-                      mb: 6,
-                      textTransform: 'uppercase',
-                      color: '#aac5ff'
-                    }}
-                  >
-                    {outingData.eventName || 'SCOUT ADVENTURE'}
-                  </Typography>
-                  
-                  <Typography 
-                    variant="h3" 
-                    sx={{ 
-                      fontWeight: 300,
-                      opacity: 0.9,
-                      mb: 4,
-                      maxWidth: 800,
-                      mx: 'auto',
-                      color: '#9bd6f3'
-                    }}
-                  >
-                    {outingData.startDateTime && outingData.endDateTime 
-                      ? `${new Date(outingData.startDateTime).toLocaleDateString('en-US', { 
-                          month: 'long', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })} - ${new Date(outingData.endDateTime).toLocaleDateString('en-US', { 
-                          month: 'long', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}`
-                      : 'Adventure Dates TBD'
-                    }
-                  </Typography>
-                </Box>
-
-                {/* Leadership Box - Lower Right Corner */}
-                {((outingData.sics && outingData.sics.length > 0) || (outingData.aics && outingData.aics.length > 0)) && (
-                  <Box sx={{ 
-                    position: 'absolute', 
-                    bottom: '40px', 
-                    right: '40px',
-                    backgroundColor: 'rgba(90, 90, 90, 0.3)',
-                    WebkitBackdropFilter: 'blur(3px)',
-                    backdropFilter: 'blur(3px)',
-                    borderRadius: '5px',
-                    padding: '24px',
-                    minWidth: '250px',
-                    boxShadow: 'black 0 0 30px 0px',
-                    display: { xs: 'none', md: 'block' }
-                  }}>
-                    {outingData.sics && outingData.sics.length > 0 && (
-                      <Typography variant="body1" sx={{ color: 'white', mb: 1, fontWeight: 500 }}>
-                        SICs: {outingData.sics.map(sic => sic.name).join(', ')}
-                      </Typography>
-                    )}
-                    {outingData.aics && outingData.aics.length > 0 && (
-                      <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
-                        AICs: {outingData.aics.map(aic => aic.name).join(', ')}
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </Box>
-
-              {/* Project Overview Quote Section */}
-              <Box sx={{ 
-                py: 8, 
-                px: 4, 
-                textAlign: 'center',
-                backgroundColor: '#f8f9fa',
-                position: 'relative'
-              }}>
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    fontWeight: 300,
-                    fontStyle: 'italic',
-                    color: '#2c3e50',
-                    maxWidth: 800,
-                    mx: 'auto',
-                    lineHeight: 1.6,
-                    mb: 2
-                  }}
-                >
-                  "{outingData.overview || 'Adventure changes you. As you explore new places and try new things, you discover parts of yourself you never knew existed. Each journey leaves its mark.'}"
-                </Typography>
-                <Typography variant="body1" sx={{ color: '#6c757d', fontWeight: 500 }}>
-                  — Outing Crews
-                </Typography>
-              </Box>
-
-
-              <Box sx={{ px: 4 }}>
-                {/* Event Details Hero Card */}
-                <Card sx={{ 
-                  mb: 4, 
-                  borderRadius: 3,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.05)'
-                }}>
-                  <CardContent sx={{ p: 4 }}>
-                    <Grid container spacing={4}>
-                      <Grid item xs={12} md={8}>
-                        <Typography variant="h4" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                          Adventure Details
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Box sx={{ 
-                              width: 48, 
-                              height: 48, 
-                              borderRadius: '50%', 
-                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white'
-                            }}>
-                              📅
-                            </Box>
-                            <Box>
-                              <Typography variant="body2" color="textSecondary">Duration</Typography>
-                              <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                                {formatDateTime(outingData.startDateTime)} - {formatDateTime(outingData.endDateTime)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Box sx={{ 
-                              width: 48, 
-                              height: 48, 
-                              borderRadius: '50%', 
-                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white'
-                            }}>
-                              📍
-                            </Box>
-                            <Box>
-                              <Typography variant="body2" color="textSecondary">Destination</Typography>
-                              <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                                {outingData.destination || 'Adventure Awaits'}
-                              </Typography>
-                              {outingData.startPoint && (
-                                <Typography variant="body2" color="textSecondary">
-                                  Starting from: {outingData.startPoint}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12} md={4}>
-                        <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                          Leadership Team
-                        </Typography>
-                        
-                        {outingData.sics?.length > 0 && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600 }}>
-                              Senior in Charge (Scouts)
-                            </Typography>
-                            {outingData.sics.map((sic, index) => (
-                              <Typography key={index} variant="body2" sx={{ ml: 1 }}>
-                                • {sic.name} ({sic.role})
-                              </Typography>
-                            ))}
-                          </Box>
-                        )}
-                        
-                        {outingData.aics?.length > 0 && (
-                          <Box>
-                            <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600 }}>
-                              Adult in Charge
-                            </Typography>
-                            {outingData.aics.map((aic, index) => (
-                              <Typography key={index} variant="body2" sx={{ ml: 1 }}>
-                                • {aic.name} ({aic.role})
-                              </Typography>
-                            ))}
-                          </Box>
-                        )}
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* Map Section */}
-                {outingData.mapLink && (
-                  <Card sx={{ 
-                    mb: 4, 
-                    borderRadius: 3,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                    border: '1px solid rgba(0,0,0,0.05)',
-                    overflow: 'hidden'
-                  }}>
-                    <CardContent sx={{ p: 0 }}>
-                      <Box sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
-                        <Typography variant="h5" sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                          📍 Location & Directions
-                        </Typography>
-                      </Box>
-                      <Box sx={{ height: 450, position: 'relative' }}>
-                        {(() => {
-                          const mapLink = outingData.mapLink;
-                          
-                          if (!mapLink) {
-                            return (
-                              <Box sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                height: 450,
-                                backgroundColor: '#f8f9fa',
-                                flexDirection: 'column',
-                                gap: 2
-                              }}>
-                                <Typography variant="h6" color="textSecondary">
-                                  No map location provided
-                                </Typography>
-                              </Box>
-                            );
-                          }
-
-                          // Extract the embed URL from the provided iframe code or use direct embed URL
-                          let embedUrl = '';
-                          
-                          if (mapLink.includes('<iframe')) {
-                            // Extract src from iframe code
-                            const srcMatch = mapLink.match(/src="([^"]+)"/);
-                            if (srcMatch) {
-                              embedUrl = srcMatch[1];
-                            }
-                          } else if (mapLink.includes('google.com/maps/embed')) {
-                            // Direct embed URL
-                            embedUrl = mapLink;
-                          }
-                          
-                          // Create static map URL for PDF exports using completely free services
-                          const createStaticMapUrl = (embedUrl) => {
-                            if (!embedUrl) return null;
-                            
-                            try {
-                              // Extract coordinates from embed URL
-                              const coordMatch = embedUrl.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-                              if (coordMatch) {
-                                const lat = parseFloat(coordMatch[1]);
-                                const lng = parseFloat(coordMatch[2]);
-                                const zoom = 14;
-                                const width = 800;
-                                const height = 450;
-                                
-                                // Use completely free OpenStreetMap static map service
-                                // This service generates static maps from OSM data for free
-                                return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=${zoom}&size=${width}x${height}&maptype=mapnik&markers=${lat},${lng},red-pushpin`;
-                              }
-                            } catch (error) {
-                              console.warn('Could not create static map URL:', error);
-                            }
-                            return null;
-                          };
-
-                          const staticMapUrl = createStaticMapUrl(embedUrl);
-                          
-                          return (
-                            <Box sx={{ height: 450, position: 'relative' }}>
-                              {embedUrl ? (
-                                <>
-                                  {/* Interactive iframe for web view */}
-                                  <iframe
-                                    src={embedUrl}
-                                    width="100%"
-                                    height="450"
-                                    style={{ border: 0 }}
-                                    allowFullScreen=""
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    className="map-iframe"
-                                  />
-                                  {/* Static image for PDF (hidden by default) */}
-                                  {staticMapUrl && (
-                                    <img
-                                      src={staticMapUrl}
-                                      alt="Location Map"
-                                      style={{
-                                        width: '100%',
-                                        height: '450px',
-                                        objectFit: 'cover',
-                                        display: 'none'
-                                      }}
-                                      className="map-static-image"
-                                    />
-                                  )}
-                                </>
-                              ) : (
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center', 
-                                  height: 450,
-                                  backgroundColor: '#f8f9fa',
-                                  flexDirection: 'column',
-                                  gap: 3,
-                                  borderRadius: 2,
-                                  border: '2px dashed #ddd'
-                                }}>
-                                  <Box sx={{ 
-                                    width: 100, 
-                                    height: 100, 
-                                    borderRadius: '50%', 
-                                    backgroundColor: '#e3f2fd',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '3rem'
-                                  }}>
-                                    📍
-                                  </Box>
-                                  <Box sx={{ textAlign: 'center' }}>
-                                    <Typography variant="h6" color="textPrimary" sx={{ mb: 1 }}>
-                                      Add Map Location
-                                    </Typography>
-                                    <Typography variant="body2" color="textSecondary" sx={{ mb: 3, maxWidth: 300 }}>
-                                      To add a map, go to Google Maps → Search location → Share → Embed a map → Copy the embed code and paste it in the Map Link field
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              )}
-                            </Box>
-                          );
-                        })()}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Overview Section */}
-                {outingData.overview && (
-                  <Box sx={{ 
-                    py: 8, 
-                    px: 4, 
-                    backgroundColor: '#f8f9fa',
-                    mb: 4
-                  }}>
-                    <Typography 
-                      variant="h4" 
-                      sx={{ 
-                        fontWeight: 300,
-                        fontStyle: 'italic',
-                        color: '#2c3e50',
-                        maxWidth: 800,
-                        mx: 'auto',
-                        lineHeight: 1.6,
-                        mb: 2,
-                        whiteSpace: 'pre-wrap',
-                        fontSize: '1.5rem',
-                        textAlign: 'left'
-                      }}
-                    >
-                      "{outingData.overview}"
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: '#6c757d', fontWeight: 500, maxWidth: 800, mx: 'auto', textAlign: 'right' }}>
-                      — Outing Crews
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Schedule Section */}
-                <Card sx={{ 
-                  mb: 4, 
-                  borderRadius: 3,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.05)'
-                }}>
-                  <CardContent sx={{ p: 4 }}>
-                    <Typography variant="h5" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600, mb: 3 }}>
-                      ⏰ Adventure Schedule
-                    </Typography>
-                    {Object.entries(groupScheduleByDate()).map(([date, items]) => (
-                      <Box key={date} sx={{ mb: 3 }}>
-                        <Typography 
-                          variant="h6" 
-                          sx={{ 
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white', 
-                            p: 2, 
-                            borderRadius: 2,
-                            fontWeight: 500
-                          }}
-                        >
-                          {date ? new Date(date).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          }) : 'Date To Be Determined'}
-                        </Typography>
-                        {items.map((item, index) => (
-                          <Box 
-                            key={index} 
-                            sx={{ 
-                              display: 'flex', 
-                              p: 2, 
-                              borderBottom: index < items.length - 1 ? '1px solid #eee' : 'none',
-                              backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white',
-                              alignItems: 'center'
-                            }}
-                          >
-                            <Typography sx={{ 
-                              minWidth: 100, 
-                              fontWeight: 600,
-                              color: '#667eea',
-                              fontSize: '1.1rem'
-                            }}>
-                              {item.time || 'TBD'}
-                            </Typography>
-                            <Typography sx={{ 
-                              flex: 1, 
-                              mx: 2,
-                              fontSize: '1.1rem'
-                            }}>
-                              {item.activity}
-                            </Typography>
-                            <Chip 
-                              label={item.group}
-                              size="small"
-                              sx={{ 
-                                backgroundColor: '#e3f2fd',
-                                color: '#1976d2',
-                                fontWeight: 500
-                              }}
-                            />
-                          </Box>
-                        ))}
-                      </Box>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                {/* Additional Information Grid */}
-                <Grid container spacing={3}>
-                  {[
-                    { key: 'parking', title: '🚗 Parking Information', data: outingData.parking },
-                    { key: 'packingList', title: '🎒 Packing List', data: outingData.packingList },
-                    { key: 'weatherForecast', title: '🌤️ Weather Forecast', data: outingData.weatherForecast },
-                    { key: 'nearbyHospital', title: '🏥 Emergency Medical', data: outingData.nearbyHospital },
-                    { key: 'references', title: '📚 References & Resources', data: outingData.references },
-                    { key: 'contacts', title: '📞 Important Contacts', data: outingData.contacts }
-                  ].filter(item => item.data).map((item) => (
-                    <Grid item xs={12} md={6} key={item.key}>
-                      <Card sx={{ 
-                        height: '100%',
-                        borderRadius: 3,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 8px 30px rgba(0,0,0,0.12)'
-                        }
-                      }}>
-                        <CardContent sx={{ p: 3 }}>
-                          <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                            {item.title}
-                          </Typography>
-                          <Typography 
-                            variant="body1" 
-                            sx={{ 
-                              whiteSpace: 'pre-wrap', 
-                              lineHeight: 1.6,
-                              color: '#555'
-                            }}
-                          >
-                            {item.data}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-
-                  {outingData.notes && (
-                    <Grid item xs={12}>
-                      <Card sx={{ 
-                        borderRadius: 3,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                        border: '1px solid rgba(0,0,0,0.05)'
-                      }}>
-                        <CardContent sx={{ p: 4 }}>
-                          <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                            📝 Additional Notes
-                          </Typography>
-                          <Typography 
-                            variant="body1" 
-                            sx={{ 
-                              whiteSpace: 'pre-wrap', 
-                              lineHeight: 1.6,
-                              color: '#555',
-                              fontSize: '1.1rem'
-                            }}
-                          >
-                            {outingData.notes}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  )}
-                </Grid>
-
-
-                {/* Footer */}
-                <Box sx={{ 
-                  mt: 8, 
-                  pt: 6, 
-                  borderTop: '1px solid #e9ecef',
-                  textAlign: 'center',
-                  backgroundColor: '#f8f9fa'
-                }}>
-                  <Typography variant="body1" sx={{ color: '#6c757d', fontWeight: 400 }}>
-                    Generated on {new Date().toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </Typography>
-                  <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 700, mt: 1 }}>
-                    BOY SCOUT TROOP 468
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#6c757d', mt: 1 }}>
-                    Adventure • Character • Leadership
-                  </Typography>
-                </Box>
-              </Box>
-            </Paper>
+            {/* Use the reusable OutingPreview component */}
+            <OutingPreview 
+              outingData={outingData}
+              showExportButton={true}
+              isLiveView={false}
+            />
           </TabPanel>
         </Paper>
 
-        {/* SIC Dialog */}
-        <Dialog open={sicDialog.open} onClose={() => setSicDialog({ open: false, name: '', role: '' })}>
-          <DialogTitle>Add Senior in Charge (Scout)</DialogTitle>
+        {/* Google Maps Help Dialog */}
+        <Dialog
+          open={helpDialogOpen}
+          onClose={() => setHelpDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">How to Get Google Maps Embed Code</Typography>
+            <IconButton onClick={() => setHelpDialogOpen(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
           <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Scout Name"
-              fullWidth
-              variant="outlined"
-              value={sicDialog.name}
-              onChange={(e) => setSicDialog(prev => ({ ...prev, name: e.target.value }))}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              label="Role/Position"
-              fullWidth
-              variant="outlined"
-              value={sicDialog.role}
-              onChange={(e) => setSicDialog(prev => ({ ...prev, role: e.target.value }))}
-              placeholder="e.g., Patrol Leader, SPL, ASPL"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setSicDialog({ open: false, name: '', role: '' })}>Cancel</Button>
-            <Button onClick={addSIC} variant="contained">Add</Button>
-          </DialogActions>
-        </Dialog>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              Follow these 3 simple steps to get the embed code from Google Maps:
+            </Typography>
+            
+            {/* Step 1 */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ 
+                  backgroundColor: '#4CAF50', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: 24, 
+                  height: 24, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  mr: 1,
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}>
+                  1
+                </Box>
+                Search for your location
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+                Go to Google Maps and search for your destination location.
+              </Typography>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                mb: 2,
+                border: '2px solid #e0e0e0',
+                borderRadius: 2,
+                overflow: 'hidden'
+              }}>
+                <img 
+                  src="/assets/images/help/map-step-1.jpg" 
+                  alt="Step 1: Search for your location in Google Maps"
+                  style={{ 
+                    width: '100%', 
+                    maxWidth: '500px', 
+                    height: 'auto',
+                    display: 'block'
+                  }}
+                />
+              </Box>
+            </Box>
 
-        {/* AIC Dialog */}
-        <Dialog open={aicDialog.open} onClose={() => setAicDialog({ open: false, name: '', role: '' })}>
-          <DialogTitle>Add Adult in Charge</DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Adult Name"
-              fullWidth
-              variant="outlined"
-              value={aicDialog.name}
-              onChange={(e) => setAicDialog(prev => ({ ...prev, name: e.target.value }))}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              label="Role/Position"
-              fullWidth
-              variant="outlined"
-              value={aicDialog.role}
-              onChange={(e) => setAicDialog(prev => ({ ...prev, role: e.target.value }))}
-              placeholder="e.g., Scoutmaster, Assistant Scoutmaster, Parent"
-            />
+            {/* Step 2 */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ 
+                  backgroundColor: '#4CAF50', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: 24, 
+                  height: 24, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  mr: 1,
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}>
+                  2
+                </Box>
+                Click "Share or embed map"
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+                In the left sidebar, click on "Share or embed map" option.
+              </Typography>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                mb: 2,
+                border: '2px solid #e0e0e0',
+                borderRadius: 2,
+                overflow: 'hidden'
+              }}>
+                <img 
+                  src="/assets/images/help/map-step-2.jpg" 
+                  alt="Step 2: Click Share or embed map in Google Maps"
+                  style={{ 
+                    width: '100%', 
+                    maxWidth: '500px', 
+                    height: 'auto',
+                    display: 'block'
+                  }}
+                />
+              </Box>
+            </Box>
+
+            {/* Step 3 */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ 
+                  backgroundColor: '#4CAF50', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: 24, 
+                  height: 24, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  mr: 1,
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}>
+                  3
+                </Box>
+                Copy the embed code
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+                Click on "Embed a map" tab, then click "COPY HTML" to copy the full iframe code.
+              </Typography>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                mb: 2,
+                border: '2px solid #e0e0e0',
+                borderRadius: 2,
+                overflow: 'hidden'
+              }}>
+                <img 
+                  src="/assets/images/help/map-step-3.jpg" 
+                  alt="Step 3: Copy the embed code from Google Maps"
+                  style={{ 
+                    width: '100%', 
+                    maxWidth: '500px', 
+                    height: 'auto',
+                    display: 'block'
+                  }}
+                />
+              </Box>
+            </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setAicDialog({ open: false, name: '', role: '' })}>Cancel</Button>
-            <Button onClick={addAIC} variant="contained">Add</Button>
+            <Button onClick={() => setHelpDialogOpen(false)} variant="contained">
+              Got it!
+            </Button>
           </DialogActions>
         </Dialog>
 

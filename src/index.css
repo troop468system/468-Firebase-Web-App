@@ -36,3 +36,52 @@ code {
     transform: scale(1);
   }
 }
+
+/* ReactQuill rich text editor customizations */
+.ql-editor p {
+  margin: 2px 0 !important;
+}
+
+/* Also apply to preview content that uses dangerouslySetInnerHTML */
+.rich-text-content p {
+  margin: 2px 0 !important;
+  font-size: inherit !important;
+}
+
+.rich-text-content h1,
+.rich-text-content h2,
+.rich-text-content h3,
+.rich-text-content h4,
+.rich-text-content h5,
+.rich-text-content h6 {
+  font-size: inherit !important;
+  margin: 4px 0 !important;
+}
+
+/* Force white background for all rich text editors (TiptapEditor) even in dark mode */
+.ProseMirror {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.ProseMirror p,
+.ProseMirror div,
+.ProseMirror span,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  color: #000000 !important;
+}
+
+/* Force white background for Tiptap toolbar */
+.tiptap-toolbar,
+.tiptap-toolbar button,
+.tiptap-toolbar .MuiButtonGroup-root,
+.tiptap-toolbar .MuiIconButton-root {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #e0e0e0 !important;
+}
