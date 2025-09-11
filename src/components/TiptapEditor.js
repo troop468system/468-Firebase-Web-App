@@ -269,23 +269,27 @@ const TiptapEditor = ({
 
         <ButtonGroup size="small" variant="outlined">
           <Tooltip title="Undo">
-            <IconButton
-              onClick={() => editor.chain().focus().undo().run()}
-              disabled={!editor.can().undo()}
-              size="small"
-            >
-              <UndoIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                size="small"
+              >
+                <UndoIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
           
           <Tooltip title="Redo">
-            <IconButton
-              onClick={() => editor.chain().focus().redo().run()}
-              disabled={!editor.can().redo()}
-              size="small"
-            >
-              <RedoIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                size="small"
+              >
+                <RedoIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
         </ButtonGroup>
       </Box>

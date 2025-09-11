@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallax Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Parallax Hero Section */
+        .parallax-hero {
+            position: relative;
+            height: 100vh;
+            min-height: 600px;
+            background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), 
+                              url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* This creates the parallax effect */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .hero-content {
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .hero-content h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .hero-content p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Content sections to test scrolling */
+        .content-section {
+            padding: 60px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+        }
+
+        .content-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .content-section p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        /* Test instructions */
+        .test-instructions {
+            background: #f0f8ff;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .test-instructions ul {
+            color: #555;
+            padding-left: 20px;
+        }
+
+        .test-instructions li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Parallax Hero Section -->
+    <div class="parallax-hero">
+        <div class="hero-content">
+            <h1>PARALLAX TEST</h1>
+            <p>Scroll down to test the parallax effect</p>
+        </div>
+    </div>
+
+    <!-- Content Section 1 -->
+    <div class="content-section">
+        <div class="test-instructions">
+            <h3>🧪 Parallax Test Instructions</h3>
+            <ul>
+                <li><strong>Scroll down</strong> slowly and watch the background image</li>
+                <li><strong>Expected behavior:</strong> The mountain background should stay fixed while this content scrolls over it</li>
+                <li><strong>If working:</strong> You'll see a "depth" effect as content moves over the stationary background</li>
+                <li><strong>If not working:</strong> The background will scroll normally with the content</li>
+            </ul>
+        </div>
+
+        <h2>Section 1: Testing Parallax Effect</h2>
+        <p>This is a test page to verify that CSS parallax scrolling is working correctly. The hero section above uses <code>background-attachment: fixed</code> to create the parallax effect.</p>
+        
+        <p>As you scroll down this page, the background image in the hero section should remain fixed relative to the viewport, while this content scrolls normally. This creates the illusion that the background is moving slower than the foreground content.</p>
+
+        <p>Keep scrolling to see more content and test the effect thoroughly...</p>
+    </div>
+
+    <!-- Content Section 2 -->
+    <div class="content-section">
+        <h2>Section 2: More Content for Scrolling</h2>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+        
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+        <p>Scroll back up to the top to see the parallax effect in reverse!</p>
+    </div>
+
+    <!-- Content Section 3 -->
+    <div class="content-section">
+        <h2>Section 3: Final Test Section</h2>
+        <p>This final section provides enough content to test the parallax effect thoroughly. The key CSS property that creates the parallax effect is:</p>
+        
+        <p><strong><code>background-attachment: fixed;</code></strong></p>
+        
+        <p>This property tells the browser to fix the background image relative to the viewport rather than the element, creating the parallax scrolling effect.</p>
+
+        <div class="test-instructions">
+            <h3>✅ Test Results</h3>
+            <ul>
+                <li><strong>Working:</strong> Background stays fixed, content scrolls over it</li>
+                <li><strong>Not Working:</strong> Background scrolls with the content</li>
+                <li><strong>Note:</strong> May not work on mobile devices (iOS Safari)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- More content for scrolling -->
+    <div class="content-section">
+        <h2>Section 4: Additional Scroll Content</h2>
+        <p>More content to ensure we have enough scroll distance to properly test the parallax effect. Keep scrolling and watching the background behavior.</p>
+        <p>The parallax effect should be consistent throughout the entire scroll experience.</p>
+    </div>
+
+    <div class="content-section">
+        <h2>Section 5: End of Test</h2>
+        <p>You've reached the end of the parallax test page. Scroll back to the top to test the effect in reverse.</p>
+        <p><strong>Expected behavior:</strong> As you scroll up, the mountain background should remain stationary while the content moves.</p>
+    </div>
+</body>
+</html>

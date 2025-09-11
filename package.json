@@ -29,6 +29,7 @@
     "firebase": "^9.23.0",
     "gapi-script": "^1.2.0",
     "google-auth-library": "^10.2.1",
+    "googleapis": "^159.0.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.2",
     "nodemailer": "^6.9.3",

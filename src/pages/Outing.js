@@ -47,12 +47,13 @@ import {
   TableHead,
   TableRow,
   InputAdornment,
-  Link,
-  Autocomplete,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogContentText,
+  DialogActions,
+  Link,
+  Autocomplete
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -86,7 +87,11 @@ import {
   Info as InfoIcon,
   Close as CloseIcon,
   Schedule as ScheduleIconSvg,
-  Room as RoomIcon
+  Room as RoomIcon,
+  Warning as WarningIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  UnfoldMore as UnfoldMoreIcon
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -676,6 +681,12 @@ const Outing = () => {
   const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(false);
+  const [scheduleWarningDialog, setScheduleWarningDialog] = useState({
+    open: false,
+    daysToLose: 0,
+    onConfirm: null,
+    onCancel: null
+  });
   const previewRef = useRef();
   const [outingListExpanded, setOutingListExpanded] = useState(true);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
@@ -716,6 +727,10 @@ const Outing = () => {
   const [endDateFilter, setEndDateFilter] = useState(null);
   const [displayedOutings, setDisplayedOutings] = useState(10); // For infinite scroll
   const [hasMoreOutings, setHasMoreOutings] = useState(true);
+  
+  // Sorting state
+  const [sortField, setSortField] = useState('startDateTime'); // Default sort by start date
+  const [sortDirection, setSortDirection] = useState('asc'); // Default ascending
 
 
   // Real user data from database
@@ -842,11 +857,23 @@ const Outing = () => {
     return true;
   });
 
-  // Sort by start date descending (newest first)
+  // Sort outings based on current sort field and direction
   const sortedOutings = [...filteredOutings].sort((a, b) => {
-    const dateA = new Date(a.startDateTime || 0);
-    const dateB = new Date(b.startDateTime || 0);
-    return dateB - dateA;
+    let valueA, valueB;
+    
+    if (sortField === 'startDateTime' || sortField === 'endDateTime') {
+      valueA = new Date(a[sortField] || 0);
+      valueB = new Date(b[sortField] || 0);
+    } else {
+      valueA = a[sortField] || '';
+      valueB = b[sortField] || '';
+    }
+    
+    if (sortDirection === 'asc') {
+      return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+    } else {
+      return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+    }
   });
 
   // Apply pagination for infinite scroll
@@ -986,15 +1013,41 @@ const Outing = () => {
     }
   };
 
-  // Handle date changes and auto-generate schedule days
+  // Handle date changes and preserve existing schedule
   const handleDateChange = (field, value) => {
+    // Validate date order when setting end date
+    if (field === 'endDateTime' && value && outingData.startDateTime) {
+      const startDate = outingData.startDateTime;
+      if (value < startDate) {
+        setSnackbar({
+          open: true,
+          message: `End date cannot be before start date. Please select a date on or after ${startDate.toLocaleDateString()}.`,
+          severity: 'error'
+        });
+        return; // Don't update the state with invalid date
+      }
+    }
+    
+    // Validate date order when setting start date
+    if (field === 'startDateTime' && value && outingData.endDateTime) {
+      const endDate = outingData.endDateTime;
+      if (value > endDate) {
+        setSnackbar({
+          open: true,
+          message: `Start date cannot be after end date. Please select a date on or before ${endDate.toLocaleDateString()}.`,
+          severity: 'error'
+        });
+        return; // Don't update the state with invalid date
+      }
+    }
+
     setOutingData(prev => {
       const updated = {
         ...prev,
         [field]: value
       };
 
-      // Auto-generate schedule days when both dates are set
+      // Update schedule days when both dates are set
       if (field === 'startDateTime' || field === 'endDateTime') {
         const startDate = field === 'startDateTime' ? value : prev.startDateTime;
         const endDate = field === 'endDateTime' ? value : prev.endDateTime;
@@ -1004,20 +1057,75 @@ const Outing = () => {
           
           // Calculate number of days (inclusive of start and end dates)
           const timeDiff = endDate.getTime() - startDate.getTime();
-          const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both start and end dates
+          const newDayCount = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both start and end dates
+          const currentDayCount = prev.scheduleDays?.length || 0;
           
-          // Generate schedule days
-          const newScheduleDays = [];
-          for (let i = 0; i < daysDiff; i++) {
-            newScheduleDays.push({
-              id: `day-${i + 1}`,
-              title: `Day ${i + 1}`,
-              activities: []
-            });
+          if (currentDayCount === 0) {
+            // No existing schedule - create new empty days
+            const newScheduleDays = [];
+            for (let i = 0; i < newDayCount; i++) {
+              newScheduleDays.push({
+                id: `day-${i + 1}`,
+                title: `Day ${i + 1}`,
+                activities: []
+              });
+            }
+            updated.scheduleDays = newScheduleDays;
+            console.log(`Auto-generated ${newDayCount} schedule days for new outing`);
+          } else if (newDayCount !== currentDayCount) {
+            // Duration changed - preserve existing activities and adjust days
+            const existingScheduleDays = [...prev.scheduleDays];
+            
+            if (newDayCount > currentDayCount) {
+              // Duration increased - add new empty days
+              for (let i = currentDayCount; i < newDayCount; i++) {
+                existingScheduleDays.push({
+                  id: `day-${i + 1}`,
+                  title: `Day ${i + 1}`,
+                  activities: []
+                });
+              }
+              updated.scheduleDays = existingScheduleDays;
+              console.log(`Extended schedule from ${currentDayCount} to ${newDayCount} days`);
+            } else {
+              // Duration decreased - warn user about losing days
+              const daysToLose = currentDayCount - newDayCount;
+              const activitiesInLostDays = existingScheduleDays
+                .slice(newDayCount)
+                .some(day => day.activities && day.activities.length > 0);
+              
+              if (activitiesInLostDays) {
+                // Show warning dialog
+                setScheduleWarningDialog({
+                  open: true,
+                  daysToLose: daysToLose,
+                  onConfirm: () => {
+                    // User confirmed - truncate schedule
+                    setOutingData(prevData => ({
+                      ...prevData,
+                      scheduleDays: prevData.scheduleDays.slice(0, newDayCount)
+                    }));
+                    console.log(`Truncated schedule from ${currentDayCount} to ${newDayCount} days (with user confirmation)`);
+                    setScheduleWarningDialog({ open: false, daysToLose: 0, onConfirm: null, onCancel: null });
+                  },
+                  onCancel: () => {
+                    // User cancelled - revert the date change
+                    console.log('Date change cancelled by user to preserve schedule');
+                    setScheduleWarningDialog({ open: false, daysToLose: 0, onConfirm: null, onCancel: null });
+                  }
+                });
+                return prev; // Don't apply the change yet, wait for dialog response
+              } else {
+                // No activities in lost days - safe to truncate
+                updated.scheduleDays = existingScheduleDays.slice(0, newDayCount);
+                console.log(`Truncated schedule from ${currentDayCount} to ${newDayCount} days (no activities lost)`);
+              }
+            }
+          } else {
+            // Same duration - just update date labels (preserve all activities)
+            updated.scheduleDays = prev.scheduleDays;
+            console.log(`Duration unchanged (${newDayCount} days) - preserved existing schedule`);
           }
-          
-          updated.scheduleDays = newScheduleDays;
-          console.log(`Auto-generated ${daysDiff} schedule days for outing`);
         }
       }
 
@@ -1031,12 +1139,18 @@ const Outing = () => {
     }
   };
 
-  const clearFilters = () => {
-    setSearchQuery('');
-    setStartDateFilter(null);
-    setEndDateFilter(null);
-    setDisplayedOutings(10);
+  // Handle column sorting
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
+
 
   const formatDateForTable = (date) => {
     if (!date) return 'Not set';
@@ -1395,11 +1509,143 @@ const Outing = () => {
           sx={{ mt: 3, mb: 2 }}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <EventIcon sx={{ mr: 2, color: 'primary.main' }} />
-              <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+              <EventIcon sx={{ color: 'primary.main' }} />
+              <Typography variant="h6" sx={{ minWidth: 'fit-content' }}>
                 Outing Packets ({sortedOutings.length})
               </Typography>
+              
+              {/* Search Field */}
+              <TextField
+                placeholder="Search outings..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="small"
+                sx={{ 
+                  flexGrow: 1, 
+                  minWidth: 200,
+                  '& .MuiOutlinedInput-root': {
+                    height: '56px'
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    padding: '16.5px 14px'
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchQuery && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSearchQuery('');
+                        }}
+                        edge="end"
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+              
+              {/* Start Date Filter */}
+              <Box sx={{ position: 'relative', minWidth: 140 }}>
+                <DateTimePicker
+                  label="Start"
+                  value={startDateFilter}
+                  onChange={(value) => setStartDateFilter(value)}
+                  views={['year', 'month', 'day']}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          height: '56px'
+                        },
+                        '& .MuiOutlinedInput-input': {
+                          padding: '16.5px 14px'
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                />
+                {startDateFilter && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStartDateFilter(null);
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      right: 35,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      p: 0.5,
+                      zIndex: 1
+                    }}
+                    title="Clear start date"
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+              
+              {/* End Date Filter */}
+              <Box sx={{ position: 'relative', minWidth: 140 }}>
+                <DateTimePicker
+                  label="End"
+                  value={endDateFilter}
+                  onChange={(value) => setEndDateFilter(value)}
+                  views={['year', 'month', 'day']}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          height: '56px'
+                        },
+                        '& .MuiOutlinedInput-input': {
+                          padding: '16.5px 14px'
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                />
+                {endDateFilter && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEndDateFilter(null);
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      right: 35,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      p: 0.5,
+                      zIndex: 1
+                    }}
+                    title="Clear end date"
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+              
+              {/* New Outing Button */}
               <Button
                 variant="contained"
                 size="small"
@@ -1408,61 +1654,13 @@ const Outing = () => {
                   e.stopPropagation();
                   createNewOuting();
                 }}
-                sx={{ mr: 2 }}
+                sx={{ minWidth: 'fit-content' }}
               >
                 New Outing
               </Button>
             </Box>
           </AccordionSummary>
           <AccordionDetails>
-            {/* Search and Filter Controls */}
-            <Box sx={{ mb: 3 }}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    placeholder="Search outings..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={2.5}>
-                  <DateTimePicker
-                    label="Start"
-                    value={startDateFilter}
-                    onChange={(value) => setStartDateFilter(value)}
-                    views={['year', 'month', 'day']}
-                    renderInput={(params) => <TextField {...params} fullWidth size="small" />}
-                  />
-                </Grid>
-                <Grid item xs={12} md={2.5}>
-                  <DateTimePicker
-                    label="End"
-                    value={endDateFilter}
-                    onChange={(value) => setEndDateFilter(value)}
-                    views={['year', 'month', 'day']}
-                    renderInput={(params) => <TextField {...params} fullWidth size="small" />}
-                  />
-                </Grid>
-                <Grid item xs={12} md={1}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<FilterIcon />}
-                    onClick={clearFilters}
-                    fullWidth
-                  >
-                    Clear
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
 
             {/* Outing Table */}
             {loadingOutings ? (
@@ -1482,19 +1680,63 @@ const Outing = () => {
                   <Table stickyHeader>
                     <TableHead>
                       <TableRow>
-                        <TableCell><strong>Visibility</strong></TableCell>
+                        <TableCell><strong>Sharing</strong></TableCell>
                         <TableCell><strong>Outing Name</strong></TableCell>
-                        <TableCell><strong>Start</strong></TableCell>
-                        <TableCell><strong>End</strong></TableCell>
+                        <TableCell 
+                          sx={{ cursor: 'pointer', userSelect: 'none' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSort('startDateTime');
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <strong>Start</strong>
+                            {sortField === 'startDateTime' ? (
+                              sortDirection === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />
+                            ) : (
+                              <UnfoldMoreIcon fontSize="small" sx={{ opacity: 0.5 }} />
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell 
+                          sx={{ cursor: 'pointer', userSelect: 'none' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSort('endDateTime');
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <strong>End</strong>
+                            {sortField === 'endDateTime' ? (
+                              sortDirection === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />
+                            ) : (
+                              <UnfoldMoreIcon fontSize="small" sx={{ opacity: 0.5 }} />
+                            )}
+                          </Box>
+                        </TableCell>
                         <TableCell><strong>Location</strong></TableCell>
                         <TableCell><strong>SICs</strong></TableCell>
                         <TableCell><strong>AICs</strong></TableCell>
-                        <TableCell><strong>Actions</strong></TableCell>
+                        <TableCell><strong>Live View</strong></TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {displayedOutingsList.map((outing) => (
-                        <TableRow key={outing.id} hover>
+                        <TableRow 
+                          key={outing.id} 
+                          hover
+                          selected={currentOutingId === outing.id}
+                          onClick={() => loadOutingForEdit(outing)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&.Mui-selected': {
+                              backgroundColor: '#e3f2fd',
+                              '&:hover': {
+                                backgroundColor: '#bbdefb'
+                              }
+                            }
+                          }}
+                        >
                           <TableCell>
                             <Chip 
                               icon={outing.isPublic ? <VisibilityIcon /> : <VisibilityOffIcon />} 
@@ -1520,28 +1762,12 @@ const Outing = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            {outing.destination ? (
-                              <Link
-                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(outing.destination)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                sx={{ 
-                                  color: 'primary.main',
-                                  textDecoration: 'none',
-                                  '&:hover': {
-                                    textDecoration: 'underline'
-                                  }
-                                }}
-                              >
-                                <Typography variant="body2">
-                                  {highlightText(outing.destination, searchQuery)}
-                                </Typography>
-                              </Link>
-                            ) : (
-                              <Typography variant="body2" color="text.secondary">
-                                Not specified
-                              </Typography>
-                            )}
+                            <Typography variant="body2" color={outing.destination ? "text.primary" : "text.secondary"}>
+                              {outing.destination 
+                                ? highlightText(outing.destination, searchQuery)
+                                : 'Not specified'
+                              }
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
@@ -1560,14 +1786,18 @@ const Outing = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <Tooltip title="Edit this outing">
+                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                              <Tooltip title="Open live view">
                                 <IconButton 
                                   size="small"
-                                  onClick={() => loadOutingForEdit(outing)}
-                                  color="primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const liveViewUrl = `/outing/${outing.id}`;
+                                    window.open(liveViewUrl, '_blank', 'width=1200,height=800');
+                                  }}
+                                  color="secondary"
                                 >
-                                  <EditIcon fontSize="small" />
+                                  <OpenInNewIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </Box>
@@ -1595,26 +1825,41 @@ const Outing = () => {
           </AccordionDetails>
         </Accordion>
 
-        <Paper sx={{ mt: 3 }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={handleTabChange}
-            sx={{ borderBottom: 1, borderColor: 'divider' }}
-          >
-            <Tab 
-              icon={<EditIcon />} 
-              label="Edit" 
-              iconPosition="start"
-            />
-            <Tab 
-              icon={<PreviewIcon />} 
-              label="Preview" 
-              iconPosition="start"
-            />
-          </Tabs>
+        {/* Editor Section - Only show when an outing is selected */}
+        {currentOutingId && (
+          <Paper sx={{ mt: 3 }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange}
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab 
+                icon={<EditIcon />} 
+                label="Edit" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<PreviewIcon />} 
+                label="Preview" 
+                iconPosition="start"
+              />
+            </Tabs>
 
           {/* Edit Tab */}
           <TabPanel value={tabValue} index={0}>
+            {/* Event Name Header - Only in Edit Tab */}
+            <Box sx={{ 
+              py: 3, 
+              textAlign: 'center'
+            }}>
+              <Typography variant="h1" sx={{ 
+                fontWeight: 600,
+                color: '#333',
+                fontSize: '3rem'
+              }}>
+                {outingData.eventName}
+              </Typography>
+            </Box>
             <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
               {/* Header with Visibility Toggle */}
               <Box sx={{ 
@@ -1665,6 +1910,7 @@ const Outing = () => {
                     label="Start Date *"
                     value={outingData.startDateTime}
                     onChange={(value) => handleDateChange('startDateTime', value)}
+                    maxDate={outingData.endDateTime || undefined}
                     renderInput={(params) => (
                       <TextField 
                         {...params} 
@@ -1686,6 +1932,7 @@ const Outing = () => {
                     label="End Date *"
                     value={outingData.endDateTime}
                     onChange={(value) => handleDateChange('endDateTime', value)}
+                    minDate={outingData.startDateTime || undefined}
                     renderInput={(params) => (
                       <TextField 
                         {...params} 
@@ -1754,13 +2001,26 @@ const Outing = () => {
                     }}
                   />
                     <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                      <IconButton 
-                        size="small" 
+                      <Button
+                        size="small"
+                        variant="outlined"
                         onClick={() => setHelpDialogOpen(true)}
-                        sx={{ mr: 1, p: 0.5 }}
+                        sx={{ 
+                          mr: 1, 
+                          minWidth: 'auto',
+                          fontSize: '0.75rem',
+                          padding: '2px 8px',
+                          height: '24px',
+                          borderColor: '#ccc',
+                          color: '#666',
+                          '&:hover': {
+                            borderColor: '#999',
+                            backgroundColor: 'rgba(0,0,0,0.04)'
+                          }
+                        }}
                       >
-                        <InfoIcon sx={{ fontSize: 16, color: '#666' }} />
-                      </IconButton>
+                        Instruction
+                      </Button>
                       <Typography variant="caption" sx={{ color: '#666' }}>
                         Go to{' '}
                         <Link 
@@ -2019,7 +2279,7 @@ const Outing = () => {
               <Box sx={{ mb: 4 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
                   <AssignmentIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Detail *
+                  Plan *
                 </Typography>
                 <Box sx={{ 
                   border: '1px solid #e0e0e0', 
@@ -2399,7 +2659,7 @@ const Outing = () => {
               right: 0,
               backgroundColor: 'white',
               borderTop: '1px solid #e0e0e0',
-              boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+              boxShadow: '0 -10px 5px -5px rgba(0, 0, 0, 0.03)',
               p: 3,
               display: 'flex',
               justifyContent: 'center',
@@ -2438,32 +2698,6 @@ const Outing = () => {
 
           {/* Preview Tab */}
           <TabPanel value={tabValue} index={1}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mb: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<OpenInNewIcon />}
-                onClick={() => {
-                  const eventId = currentOutingId || 'preview';
-                  const liveViewUrl = `/outing/${eventId}`;
-                  window.open(liveViewUrl, '_blank', 'width=1200,height=800');
-                }}
-                sx={{ 
-                  borderColor: '#1976d2',
-                  color: '#1976d2',
-                  px: 3,
-                  py: 1.5,
-                  borderRadius: 2,
-                  '&:hover': {
-                    backgroundColor: '#1976d2',
-                    color: 'white',
-                    transform: 'translateY(-1px)'
-                  }
-                }}
-              >
-                Live View
-              </Button>
-            </Box>
-
             {/* Use the reusable OutingPreview component */}
             <OutingPreview 
               outingData={outingData}
@@ -2471,7 +2705,8 @@ const Outing = () => {
               isLiveView={false}
             />
           </TabPanel>
-        </Paper>
+          </Paper>
+        )}
 
         {/* Google Maps Help Dialog */}
         <Dialog
@@ -2644,6 +2879,44 @@ const Outing = () => {
             {snackbar.message}
           </Alert>
         </Snackbar>
+
+        {/* Schedule Warning Dialog */}
+        <Dialog
+          open={scheduleWarningDialog.open}
+          onClose={scheduleWarningDialog.onCancel}
+          aria-labelledby="schedule-warning-dialog-title"
+          aria-describedby="schedule-warning-dialog-description"
+        >
+          <DialogTitle id="schedule-warning-dialog-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningIcon color="warning" />
+            Schedule Duration Change
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="schedule-warning-dialog-description">
+              Reducing the duration will remove the last{' '}
+              <strong>{scheduleWarningDialog.daysToLose}</strong>{' '}
+              day{scheduleWarningDialog.daysToLose > 1 ? 's' : ''} from your schedule, which contain{scheduleWarningDialog.daysToLose === 1 ? 's' : ''} activities.
+              <br /><br />
+              <strong>This action cannot be undone.</strong> Do you want to continue?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={scheduleWarningDialog.onCancel} 
+              color="primary"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={scheduleWarningDialog.onConfirm} 
+              color="warning" 
+              variant="contained"
+              startIcon={<WarningIcon />}
+            >
+              Remove Days
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </LocalizationProvider>
   );
