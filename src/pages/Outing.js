@@ -53,7 +53,9 @@ import {
   DialogContentText,
   DialogActions,
   Link,
-  Autocomplete
+  Autocomplete,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -102,6 +104,7 @@ import html2canvas from 'html2canvas';
 import PageTitle from '../components/PageTitle';
 import outingService from '../services/outingService';
 import authService from '../services/authService';
+import googleDriveService from '../services/googleDriveService';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -678,6 +681,9 @@ const WeatherForecast = ({ startDate, endDate, location }) => {
 };
 
 const Outing = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Hide columns on screens smaller than 'md' (960px)
+  
   const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(false);
@@ -715,6 +721,10 @@ const Outing = () => {
     coverImage: 'forest', // Background image for hero section
     isPublic: true // Visibility setting
   });
+
+  // Track original content for image cleanup
+  const [originalOutingData, setOriginalOutingData] = useState(null);
+  const [initialImageList, setInitialImageList] = useState([]);
 
   // Real data from Firebase
   const [existingOutings, setExistingOutings] = useState([]);
@@ -935,7 +945,7 @@ const Outing = () => {
       });
     };
     
-    setOutingData({
+    const loadedData = {
       eventName: outing.eventName,
       startDateTime: outing.startDateTime,
       endDateTime: outing.endDateTime,
@@ -957,12 +967,24 @@ const Outing = () => {
       images: outing.images || [],
       coverImage: outing.coverImage || 'forest', // Add coverImage field
       isPublic: outing.isPublic
-    });
+    };
+    
+    setOutingData(loadedData);
+    // Store original data for image cleanup comparison
+    setOriginalOutingData(loadedData);
+    
+    // Extract and store initial image list for batch cleanup
+    const initialImages = googleDriveService.extractAllImagesFromOuting(loadedData);
+    setInitialImageList(initialImages);
+    console.log(`Loaded outing with ${initialImages.length} images:`, initialImages);
+    
     setTabValue(0); // Switch to edit tab
   };
 
   const createNewOuting = () => {
     setCurrentOutingId(null); // Clear the ID for new outing
+    setOriginalOutingData(null); // Clear original data for new outing
+    setInitialImageList([]); // Clear initial image list for new outing
     setOutingData({
       eventName: '',
       startDateTime: null,
@@ -1331,14 +1353,48 @@ const Outing = () => {
         references: cleanHtmlContent(outingData.references)
       };
 
+      // Clean up unused images if editing existing outing using batch approach
+      if (currentOutingId && originalOutingData && initialImageList.length > 0) {
+        try {
+          console.log('Starting batch image cleanup...');
+          
+          // Use the new batch cleanup method
+          const cleanupResult = await googleDriveService.cleanupUnusedImagesBatch(
+            originalOutingData, 
+            cleanedOutingData
+          );
+          
+          if (cleanupResult.cleaned > 0) {
+            console.log(`✅ Successfully batch deleted ${cleanupResult.cleaned} unused images`);
+            setSnackbar({
+              open: true,
+              message: `Outing updated and cleaned up ${cleanupResult.cleaned} unused images!`,
+              severity: 'success'
+            });
+          } else if (cleanupResult.message) {
+            console.log(`ℹ️ Image cleanup: ${cleanupResult.message}`);
+          }
+          
+          if (cleanupResult.errors.length > 0) {
+            console.warn(`⚠️ Failed to clean up ${cleanupResult.errors.length} images:`, cleanupResult.errors);
+          }
+        } catch (cleanupError) {
+          console.error('❌ Error during batch image cleanup:', cleanupError);
+          // Don't fail the save operation due to cleanup errors
+        }
+      }
+
       if (currentOutingId) {
         // Update existing outing
         await outingService.updateOuting(currentOutingId, cleanedOutingData);
-        setSnackbar({
-          open: true,
-          message: 'Outing plan updated successfully!',
-          severity: 'success'
-        });
+        // Only show update message if no cleanup message was already shown
+        if (!(currentOutingId && originalOutingData && initialImageList.length > 0)) {
+          setSnackbar({
+            open: true,
+            message: 'Outing plan updated successfully!',
+            severity: 'success'
+          });
+        }
       } else {
         // Create new outing
         const newOutingId = await outingService.createOuting(cleanedOutingData);
@@ -1349,6 +1405,12 @@ const Outing = () => {
           severity: 'success'
         });
       }
+      
+      // Update tracking data for future comparisons
+      setOriginalOutingData(cleanedOutingData);
+      const newImageList = googleDriveService.extractAllImagesFromOuting(cleanedOutingData);
+      setInitialImageList(newImageList);
+      console.log(`Updated image tracking: ${newImageList.length} images`);
       
       // Reload the outings list to reflect changes
       await loadOutings();
@@ -1676,11 +1738,22 @@ const Outing = () => {
               </Typography>
             ) : (
               <>
-                <TableContainer component={Paper} sx={{ maxHeight: 600, overflow: 'auto' }}>
-                  <Table stickyHeader>
+                <TableContainer component={Paper} sx={{ 
+                  maxHeight: 600, 
+                  overflow: 'auto',
+                  '& .MuiTableCell-root': {
+                    ...(isMobile && {
+                      padding: '8px 4px', // Reduce padding on mobile
+                      fontSize: '0.875rem' // Smaller font size on mobile
+                    })
+                  }
+                }}>
+                  <Table stickyHeader size={isMobile ? "small" : "medium"}>
                     <TableHead>
                       <TableRow>
-                        <TableCell><strong>Sharing</strong></TableCell>
+                        <TableCell sx={{ width: isMobile ? '40px' : 'auto', minWidth: isMobile ? '40px' : 'auto' }}>
+                          <strong>{isMobile ? '' : 'Sharing'}</strong>
+                        </TableCell>
                         <TableCell><strong>Outing Name</strong></TableCell>
                         <TableCell 
                           sx={{ cursor: 'pointer', userSelect: 'none' }}
@@ -1715,8 +1788,8 @@ const Outing = () => {
                           </Box>
                         </TableCell>
                         <TableCell><strong>Location</strong></TableCell>
-                        <TableCell><strong>SICs</strong></TableCell>
-                        <TableCell><strong>AICs</strong></TableCell>
+                        {!isMobile && <TableCell><strong>SICs</strong></TableCell>}
+                        {!isMobile && <TableCell><strong>AICs</strong></TableCell>}
                         <TableCell><strong>Live View</strong></TableCell>
                       </TableRow>
                     </TableHead>
@@ -1737,17 +1810,38 @@ const Outing = () => {
                             }
                           }}
                         >
-                          <TableCell>
-                            <Chip 
-                              icon={outing.isPublic ? <VisibilityIcon /> : <VisibilityOffIcon />} 
-                              label={outing.isPublic ? "Public" : "Private"} 
-                              size="small" 
-                              color={outing.isPublic ? "success" : "error"} 
-                              variant="outlined"
-                            />
+                          <TableCell sx={{ width: isMobile ? '40px' : 'auto', textAlign: 'center' }}>
+                            {isMobile ? (
+                              <Tooltip title={outing.isPublic ? "Public" : "Private"}>
+                                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                  {outing.isPublic ? 
+                                    <VisibilityIcon fontSize="small" color="success" /> : 
+                                    <VisibilityOffIcon fontSize="small" color="error" />
+                                  }
+                                </Box>
+                              </Tooltip>
+                            ) : (
+                              <Chip 
+                                icon={outing.isPublic ? <VisibilityIcon /> : <VisibilityOffIcon />} 
+                                label={outing.isPublic ? "Public" : "Private"} 
+                                size="small" 
+                                color={outing.isPublic ? "success" : "error"} 
+                                variant="outlined"
+                              />
+                            )}
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" fontWeight="medium">
+                            <Typography 
+                              variant="body2" 
+                              fontWeight="medium"
+                              sx={{ 
+                                ...(isMobile && {
+                                  wordBreak: 'break-word',
+                                  hyphens: 'auto',
+                                  lineHeight: 1.2
+                                })
+                              }}
+                            >
                               {highlightText(outing.eventName, searchQuery)}
                             </Typography>
                           </TableCell>
@@ -1762,29 +1856,44 @@ const Outing = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" color={outing.destination ? "text.primary" : "text.secondary"}>
+                            <Typography 
+                              variant="body2" 
+                              color={outing.destination ? "text.primary" : "text.secondary"}
+                              sx={{ 
+                                ...(isMobile && {
+                                  wordBreak: 'break-word',
+                                  hyphens: 'auto',
+                                  lineHeight: 1.2,
+                                  maxWidth: '120px'
+                                })
+                              }}
+                            >
                               {outing.destination 
                                 ? highlightText(outing.destination, searchQuery)
                                 : 'Not specified'
                               }
                             </Typography>
                           </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {outing.sics?.length > 0 
-                                ? highlightText(outing.sics.map(sic => sic.name).join(', '), searchQuery)
-                                : 'None assigned'
-                              }
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {outing.aics?.length > 0 
-                                ? highlightText(outing.aics.map(aic => aic.name).join(', '), searchQuery)
-                                : 'None assigned'
-                              }
-                            </Typography>
-                          </TableCell>
+                          {!isMobile && (
+                            <TableCell>
+                              <Typography variant="body2">
+                                {outing.sics?.length > 0 
+                                  ? highlightText(outing.sics.map(sic => sic.name).join(', '), searchQuery)
+                                  : 'None assigned'
+                                }
+                              </Typography>
+                            </TableCell>
+                          )}
+                          {!isMobile && (
+                            <TableCell>
+                              <Typography variant="body2">
+                                {outing.aics?.length > 0 
+                                  ? highlightText(outing.aics.map(aic => aic.name).join(', '), searchQuery)
+                                  : 'None assigned'
+                                }
+                              </Typography>
+                            </TableCell>
+                          )}
                           <TableCell>
                             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                               <Tooltip title="Open live view">

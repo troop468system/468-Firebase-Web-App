@@ -300,6 +300,39 @@ localStorage.setItem(`image_${fileId}`, blobUrl);
 - Implement client-side upload queuing for multiple files
 - Show progress indicators for large uploads
 
+#### Automatic Image Cleanup
+
+The system automatically cleans up unused images from Google Drive when outing plans are saved:
+
+**How It Works:**
+1. **Track Original Content**: When editing existing outings, original content is stored for comparison
+2. **Compare on Save**: When saving, the system compares original vs. new content to identify removed images
+3. **Auto-Delete**: Unused images are automatically deleted from Google Drive
+4. **Error Handling**: Cleanup errors don't prevent saving; they're logged for debugging
+
+**Key Features:**
+- **Automatic**: No manual intervention required
+- **Safe**: Only affects images that were actually removed from content
+- **Non-blocking**: Cleanup failures don't prevent document saves
+- **Comprehensive**: Scans all rich text fields (overview, detail, notes, etc.)
+
+**Methods Available:**
+```javascript
+// Automatic cleanup (used internally)
+await googleDriveService.cleanupUnusedImages(oldContent, newContent);
+
+// Extract images from content
+const images = googleDriveService.extractImageUrlsFromContent(htmlContent);
+
+// Bulk cleanup placeholder (for future implementation)
+await googleDriveService.bulkCleanupOrphanedImages(allContentArray);
+```
+
+**Benefits:**
+- **Storage Efficiency**: Prevents accumulation of unused images
+- **Cost Management**: Reduces Google Drive storage usage
+- **Maintenance-Free**: Automatic cleanup without user intervention
+
 ### Environment Variables
 Add to `.env` file:
 ```env

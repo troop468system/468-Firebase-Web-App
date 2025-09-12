@@ -103,19 +103,75 @@ const TiptapEditor = ({
       setUploading(true);
       setUploadError(null);
 
+      // Create animated loading indicator
+      const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+      let spinnerIndex = 0;
+      let loadingPosition = null;
+      let animationInterval = null;
+      
+      if (editor) {
+        // Get current cursor position
+        const { from } = editor.state.selection;
+        loadingPosition = from;
+        
+        // Insert initial spinner frame
+        editor.chain().focus().insertContent(spinnerFrames[0]).run();
+        
+        // Start animation
+        animationInterval = setInterval(() => {
+          if (editor && loadingPosition !== null) {
+            spinnerIndex = (spinnerIndex + 1) % spinnerFrames.length;
+            
+            // Replace the current spinner with next frame
+            editor
+              .chain()
+              .focus()
+              .setTextSelection({ from: loadingPosition, to: loadingPosition + 1 })
+              .insertContent(spinnerFrames[spinnerIndex])
+              .run();
+          }
+        }, 100); // Update every 100ms for smooth animation
+      }
+
       try {
         const imageUrl = await googleDriveService.uploadImage(file);
         
-        if (editor) {
-          editor.chain().focus().setImage({ 
-            src: imageUrl,
-            alt: file.name,
-            title: file.name 
-          }).run();
+        // Stop animation
+        if (animationInterval) {
+          clearInterval(animationInterval);
+        }
+        
+        if (editor && loadingPosition !== null) {
+          // Replace the spinner with the image
+          editor
+            .chain()
+            .focus()
+            .setTextSelection({ from: loadingPosition, to: loadingPosition + 1 })
+            .deleteSelection()
+            .setImage({ 
+              src: imageUrl,
+              alt: file.name,
+              title: file.name 
+            })
+            .run();
         }
       } catch (error) {
         console.error('Image upload failed:', error);
         setUploadError(error.message || 'Failed to upload image');
+        
+        // Stop animation and remove spinner on error
+        if (animationInterval) {
+          clearInterval(animationInterval);
+        }
+        
+        if (editor && loadingPosition !== null) {
+          editor
+            .chain()
+            .focus()
+            .setTextSelection({ from: loadingPosition, to: loadingPosition + 1 })
+            .deleteSelection()
+            .run();
+        }
       } finally {
         setUploading(false);
       }
@@ -269,27 +325,23 @@ const TiptapEditor = ({
 
         <ButtonGroup size="small" variant="outlined">
           <Tooltip title="Undo">
-            <span>
-              <IconButton
-                onClick={() => editor.chain().focus().undo().run()}
-                disabled={!editor.can().undo()}
-                size="small"
-              >
-                <UndoIcon fontSize="small" />
-              </IconButton>
-            </span>
+            <IconButton
+              onClick={() => editor.chain().focus().undo().run()}
+              disabled={!editor.can().undo()}
+              size="small"
+            >
+              <UndoIcon fontSize="small" />
+            </IconButton>
           </Tooltip>
           
           <Tooltip title="Redo">
-            <span>
-              <IconButton
-                onClick={() => editor.chain().focus().redo().run()}
-                disabled={!editor.can().redo()}
-                size="small"
-              >
-                <RedoIcon fontSize="small" />
-              </IconButton>
-            </span>
+            <IconButton
+              onClick={() => editor.chain().focus().redo().run()}
+              disabled={!editor.can().redo()}
+              size="small"
+            >
+              <RedoIcon fontSize="small" />
+            </IconButton>
           </Tooltip>
         </ButtonGroup>
       </Box>

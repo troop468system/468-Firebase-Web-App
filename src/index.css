@@ -43,9 +43,25 @@ code {
 }
 
 /* Also apply to preview content that uses dangerouslySetInnerHTML */
+.rich-text-content {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
 .rich-text-content p {
   margin: 2px 0 !important;
   font-size: inherit !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+  width: 100% !important;
 }
 
 .rich-text-content h1,
@@ -56,12 +72,58 @@ code {
 .rich-text-content h6 {
   font-size: inherit !important;
   margin: 4px 0 !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.rich-text-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  word-wrap: normal !important;
+  width: auto !important;
+}
+
+.rich-text-content * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+/* More specific selectors for Material-UI Typography components */
+.MuiTypography-root.rich-text-content {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+.MuiTypography-root.rich-text-content * {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
 }
 
 /* Force white background for all rich text editors (TiptapEditor) even in dark mode */
 .ProseMirror {
   background-color: #ffffff !important;
   color: #000000 !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
 }
 
 .ProseMirror p,
@@ -74,6 +136,20 @@ code {
 .ProseMirror h5,
 .ProseMirror h6 {
   color: #000000 !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+}
+
+.ProseMirror img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.ProseMirror * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Force white background for Tiptap toolbar */
@@ -84,4 +160,148 @@ code {
   background-color: #ffffff !important;
   color: #000000 !important;
   border-color: #e0e0e0 !important;
+}
+
+/* Global container overflow fixes for preview sections */
+.overview-section,
+.detail-section,
+.parking-section,
+.nearbyHospital-section,
+.notes-section,
+.contacts-section,
+.references-section {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+  min-height: fit-content !important;
+  display: flex !important;
+  flex-direction: column !important;
+  contain: layout !important;
+}
+
+.overview-section *,
+.detail-section *,
+.parking-section *,
+.nearbyHospital-section *,
+.notes-section *,
+.contacts-section *,
+.references-section * {
+  max-width: 100% !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+/* More aggressive text wrapping for any potential overflow */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Specific fix for preview container content */
+[class*="-section"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+}
+
+[class*="-section"] * {
+  max-width: 100% !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+/* Force break long words in any text content */
+div, p, span, h1, h2, h3, h4, h5, h6 {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+/* Critical fix for dangerouslySetInnerHTML content */
+[dangerouslySetInnerHTML] {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+/* Emergency overflow fix - apply to any element that might overflow */
+.MuiPaper-root * {
+  max-width: 100% !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+/* Direct fix for preview content wrapper */
+.preview-content-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+}
+
+/* Spinner animation for image upload loading */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.preview-content-wrapper * {
+  max-width: 100% !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Nuclear option - force all text to wrap */
+.preview-content-wrapper p,
+.preview-content-wrapper div,
+.preview-content-wrapper span,
+.preview-content-wrapper h1,
+.preview-content-wrapper h2,
+.preview-content-wrapper h3,
+.preview-content-wrapper h4,
+.preview-content-wrapper h5,
+.preview-content-wrapper h6 {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }

@@ -50,6 +50,7 @@ class GoogleDriveService {
         body: JSON.stringify({
           fileName: uniqueFileName,
           fileData: fileData,
+          mimeType: file.type,
           folderName: this.folderName
         })
       });
@@ -127,11 +128,16 @@ class GoogleDriveService {
     }
   }
 
+  // Convert file to base64 for uploading
   fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => {
+        // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+        const base64String = reader.result.split(',')[1];
+        resolve(base64String);
+      };
       reader.onerror = error => reject(error);
     });
   }
@@ -192,6 +198,214 @@ class GoogleDriveService {
     }
     
     return null;
+  }
+
+  // Extract all Google Drive image URLs from HTML content
+  extractImageUrlsFromContent(htmlContent) {
+    if (!htmlContent) return [];
+    
+    const imageUrls = [];
+    const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
+    let match;
+    
+    while ((match = imgRegex.exec(htmlContent)) !== null) {
+      const src = match[1];
+      
+      // Check if it's a Google Drive URL (either direct or proxy)
+      if (src.includes('drive.google.com') || 
+          (this.proxyUrl && src.includes(this.proxyUrl.split('?')[0]))) {
+        imageUrls.push(src);
+      }
+    }
+    
+    return imageUrls;
+  }
+
+  // Extract all images from an outing data object (all rich text fields)
+  extractAllImagesFromOuting(outingData) {
+    if (!outingData) return [];
+    
+    const richTextFields = [
+      outingData.overview,
+      outingData.detail,
+      outingData.packingList,
+      outingData.parking,
+      outingData.nearbyHospital,
+      outingData.notes,
+      outingData.contacts,
+      outingData.references
+    ];
+    
+    const allImages = [];
+    richTextFields.forEach(content => {
+      if (content) {
+        const images = this.extractImageUrlsFromContent(content);
+        allImages.push(...images);
+      }
+    });
+    
+    // Remove duplicates and return unique image URLs
+    return [...new Set(allImages)];
+  }
+
+  // Extract file IDs from image URLs for batch operations
+  extractFileIdsFromImageUrls(imageUrls) {
+    const fileIds = [];
+    
+    imageUrls.forEach(url => {
+      const fileId = this.extractFileIdFromUrl(url);
+      if (fileId) {
+        fileIds.push(fileId);
+      }
+    });
+    
+    return [...new Set(fileIds)]; // Remove duplicates
+  }
+
+  // Batch delete multiple images by file IDs
+  async batchDeleteImages(fileIds) {
+    try {
+      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
+        console.log('Google Drive proxy not configured, skipping batch image cleanup.');
+        return { cleaned: 0, errors: [], message: 'Proxy not configured' };
+      }
+
+      if (!fileIds || fileIds.length === 0) {
+        console.log('No images to clean up.');
+        return { cleaned: 0, errors: [] };
+      }
+
+      console.log(`Batch deleting ${fileIds.length} images...`);
+
+      // Send batch delete request to Apps Script
+      const response = await fetch(`${this.proxyUrl}?action=batchDelete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileIds })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log(`Successfully batch deleted ${result.cleaned} images`);
+        return {
+          cleaned: result.cleaned,
+          errors: result.errors || [],
+          message: `Batch deleted ${result.cleaned} images`
+        };
+      } else {
+        throw new Error(result.error || 'Batch delete failed');
+      }
+    } catch (error) {
+      console.error('Error during batch image cleanup:', error);
+      return { 
+        cleaned: 0, 
+        errors: [{ error: error.message }], 
+        message: 'Batch delete failed' 
+      };
+    }
+  }
+
+  // Improved cleanup using batch operations
+  async cleanupUnusedImagesBatch(initialOutingData, finalOutingData) {
+    try {
+      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
+        console.log('Google Drive proxy not configured, skipping image cleanup.');
+        return { cleaned: 0, errors: [] };
+      }
+
+      // Extract all images from initial and final outing data
+      const initialImages = this.extractAllImagesFromOuting(initialOutingData);
+      const finalImages = this.extractAllImagesFromOuting(finalOutingData);
+      
+      console.log(`Initial images: ${initialImages.length}, Final images: ${finalImages.length}`);
+      
+      // Find images that were removed
+      const removedImages = initialImages.filter(img => !finalImages.includes(img));
+      
+      if (removedImages.length === 0) {
+        console.log('No images to clean up.');
+        return { cleaned: 0, errors: [] };
+      }
+
+      console.log(`Found ${removedImages.length} images to clean up:`, removedImages);
+      
+      // Extract file IDs for batch deletion
+      const fileIdsToDelete = this.extractFileIdsFromImageUrls(removedImages);
+      
+      if (fileIdsToDelete.length === 0) {
+        console.log('No valid file IDs found for cleanup.');
+        return { cleaned: 0, errors: [] };
+      }
+
+      // Perform batch deletion
+      return await this.batchDeleteImages(fileIdsToDelete);
+      
+    } catch (error) {
+      console.error('Error during batch image cleanup:', error);
+      return { cleaned: 0, errors: [{ error: error.message }] };
+    }
+  }
+
+  // Legacy method - kept for backward compatibility
+  async cleanupUnusedImages(oldContent = '', newContent = '') {
+    console.warn('cleanupUnusedImages is deprecated, use cleanupUnusedImagesBatch instead');
+    
+    // Convert to outing data format for the new method
+    const initialData = {
+      overview: oldContent,
+      detail: '', packingList: '', parking: '', 
+      nearbyHospital: '', notes: '', contacts: '', references: ''
+    };
+    
+    const finalData = {
+      overview: newContent,
+      detail: '', packingList: '', parking: '', 
+      nearbyHospital: '', notes: '', contacts: '', references: ''
+    };
+    
+    return await this.cleanupUnusedImagesBatch(initialData, finalData);
+  }
+
+  // Bulk cleanup function to find and remove orphaned images across all content
+  async bulkCleanupOrphanedImages(allContentArray = []) {
+    try {
+      // Check if proxy is configured
+      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
+        console.log('Google Drive proxy not configured, skipping bulk image cleanup.');
+        return { cleaned: 0, errors: [], message: 'Proxy not configured' };
+      }
+
+      // Combine all content to find all referenced images
+      const allContent = allContentArray.join(' ');
+      const referencedImages = this.extractImageUrlsFromContent(allContent);
+      
+      console.log(`Found ${referencedImages.length} images referenced in content`);
+      
+      // For now, this is a placeholder - in a real implementation, you would:
+      // 1. List all files in the Google Drive folder
+      // 2. Compare with referenced images
+      // 3. Delete unreferenced images
+      
+      // This would require additional Google Apps Script endpoints to list folder contents
+      console.log('Bulk cleanup would require additional Google Apps Script endpoints to list folder contents');
+      
+      return { 
+        cleaned: 0, 
+        errors: [], 
+        message: `Found ${referencedImages.length} referenced images. Bulk cleanup requires additional implementation.`,
+        referencedImages: referencedImages.length
+      };
+    } catch (error) {
+      console.error('Error during bulk image cleanup:', error);
+      return { cleaned: 0, errors: [{ error: error.message }], message: 'Bulk cleanup failed' };
+    }
   }
 
   // Convenient method to get image info including data URL

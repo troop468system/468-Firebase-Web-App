@@ -1648,33 +1648,43 @@ const OutingPreview = ({
       <Box
         sx={{
           perspective: '1000px',
-          minHeight: isLiveView ? '100vh' : '800px',
+          minHeight: isLiveView ? '100vh' : 'auto',
+          height: 'auto',
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'visible',
+          boxSizing: 'border-box'
         }}
       >
         <Box
           sx={{
             position: 'relative',
             width: '100%',
-            minHeight: isLiveView ? '100vh' : '800px',
+            minHeight: isLiveView ? '100vh' : 'auto',
+            height: 'auto',
+            maxWidth: '100%',
+            overflow: 'visible',
             transformStyle: 'preserve-3d',
             transition: 'transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
             transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            boxSizing: 'border-box'
           }}
         >
           {/* Front Side - Outing Preview */}
           <Paper 
             ref={previewRef}
             sx={{ 
-              position: 'absolute',
-              top: 0,
-              left: 0,
+              position: 'relative',
               width: '100%',
               backgroundColor: '#fff',
-              minHeight: isLiveView ? '100vh' : '800px',
+              minHeight: isLiveView ? '100vh' : 'auto',
+              height: 'auto',
               boxShadow: 'none',
               borderRadius: 0,
-              overflow: 'hidden',
-              backfaceVisibility: 'hidden',
+              overflow: 'visible',
+              overflowWrap: 'break-word',
+              wordBreak: 'break-word',
+              boxSizing: 'border-box'
             }}
           >
 
@@ -1772,33 +1782,129 @@ const OutingPreview = ({
 
         {/* Overview Section */}
         {outingData.overview && outingData.overview.trim() !== '' && (
-          <Box className="overview-section" sx={{ px: 4, py: 6, backgroundColor: '#f8f9fa' }}>
+          <Box className="overview-section" sx={{ 
+            px: 4, 
+            py: 6, 
+            backgroundColor: '#f8f9fa',
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden',
+            wordWrap: 'break-word',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+            boxSizing: 'border-box',
+            minHeight: 'fit-content',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
             <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600, mb: 3, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 1 }}>
               <AssignmentIcon sx={{ fontSize: '1.2rem', color: '#2c3e50' }} />
               Introduction
             </Typography>
-            <Typography 
-              variant="body1" 
-              className="rich-text-content"
-              sx={{ lineHeight: 1.8, textAlign: 'left', fontSize: '1.0rem', padding: '0 24px', margin: '0 auto', color: '#2c3e50' }}
-              dangerouslySetInnerHTML={{ __html: outingData.overview }}
-            />
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                padding: '0 16px',
+                boxSizing: 'border-box',
+                minHeight: 'fit-content',
+                flex: '1 1 auto'
+              }}
+            >
+              <Typography 
+                variant="body1" 
+                className="rich-text-content preview-content-wrapper"
+                sx={{ 
+                  lineHeight: 1.8, 
+                  textAlign: 'left', 
+                  fontSize: '1.0rem', 
+                  margin: '0', 
+                  padding: '0',
+                  color: '#2c3e50',
+                  width: '100%',
+                  maxWidth: '100%',
+                  wordWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'normal',
+                  boxSizing: 'border-box',
+                  '& *': {
+                    maxWidth: '100% !important',
+                    wordWrap: 'break-word !important',
+                    wordBreak: 'break-word !important',
+                    overflowWrap: 'break-word !important',
+                    whiteSpace: 'normal !important',
+                    boxSizing: 'border-box !important'
+                  }
+                }}
+                dangerouslySetInnerHTML={{ __html: outingData.overview }}
+              />
+            </div>
           </Box>
         )}
 
         {/* Detail Section */}
         {outingData.detail && outingData.detail.trim() !== '' && (
-          <Box className="detail-section" sx={{ px: 4, py: 6, backgroundColor: '#f8f9fa' }}>
+          <Box className="detail-section" sx={{ 
+            px: 4, 
+            py: 6, 
+            backgroundColor: '#f8f9fa',
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden',
+            wordWrap: 'break-word',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+            boxSizing: 'border-box',
+            minHeight: 'fit-content',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
             <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600, mb: 3, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 1 }}>
               <DescriptionIcon sx={{ fontSize: '1.2rem', color: '#2c3e50' }} />
               Plan
             </Typography>
-            <Typography 
-              variant="body1" 
-              className="rich-text-content"
-              sx={{ lineHeight: 1.8, textAlign: 'left', fontSize: '1.0rem', padding: '0 24px', margin: '0 auto', color: '#2c3e50' }}
-              dangerouslySetInnerHTML={{ __html: outingData.detail }}
-            />
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                padding: '0 16px',
+                boxSizing: 'border-box',
+                minHeight: 'fit-content',
+                flex: '1 1 auto'
+              }}
+            >
+              <Typography 
+                variant="body1" 
+                className="rich-text-content preview-content-wrapper"
+                sx={{ 
+                  lineHeight: 1.8, 
+                  textAlign: 'left', 
+                  fontSize: '1.0rem', 
+                  margin: '0', 
+                  padding: '0',
+                  color: '#2c3e50',
+                  width: '100%',
+                  maxWidth: '100%',
+                  wordWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'normal',
+                  boxSizing: 'border-box',
+                  '& *': {
+                    maxWidth: '100% !important',
+                    wordWrap: 'break-word !important',
+                    wordBreak: 'break-word !important',
+                    overflowWrap: 'break-word !important',
+                    whiteSpace: 'normal !important',
+                    boxSizing: 'border-box !important'
+                  }
+                }}
+                dangerouslySetInnerHTML={{ __html: outingData.detail }}
+              />
+            </div>
           </Box>
         )}
 
@@ -1879,25 +1985,62 @@ const OutingPreview = ({
           <Box key={item.key} className={`${item.key}-section`} sx={{ 
             px: 4,
             py: 6,
-            backgroundColor: '#f8f9fa'
+            backgroundColor: '#f8f9fa',
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden',
+            wordWrap: 'break-word',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+            boxSizing: 'border-box',
+            minHeight: 'fit-content',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <item.icon sx={{ fontSize: '1.2rem', color: '#2c3e50' }} />
               {item.title}
             </Typography>
-            <Typography 
-              variant="body1"
-              className="rich-text-content"
-              sx={{ 
-                lineHeight: 1.8, 
-                textAlign: 'left',
-                color: '#2c3e50',
-                fontSize: '1.0rem',
-                padding: '0 24px',
-                margin: '0 auto'
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                padding: '0 16px',
+                boxSizing: 'border-box',
+                minHeight: 'fit-content',
+                flex: '1 1 auto'
               }}
-              dangerouslySetInnerHTML={{ __html: outingData[item.key] }}
-            />
+            >
+              <Typography 
+                variant="body1"
+                className="rich-text-content preview-content-wrapper"
+                sx={{ 
+                  lineHeight: 1.8, 
+                  textAlign: 'left',
+                  color: '#2c3e50',
+                  fontSize: '1.0rem',
+                  margin: '0',
+                  padding: '0',
+                  width: '100%',
+                  maxWidth: '100%',
+                  wordWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'normal',
+                  boxSizing: 'border-box',
+                  '& *': {
+                    maxWidth: '100% !important',
+                    wordWrap: 'break-word !important',
+                    wordBreak: 'break-word !important',
+                    overflowWrap: 'break-word !important',
+                    whiteSpace: 'normal !important',
+                    boxSizing: 'border-box !important'
+                  }
+                }}
+                dangerouslySetInnerHTML={{ __html: outingData[item.key] }}
+              />
+            </div>
           </Box>
         ))}
 
