@@ -32,6 +32,7 @@ src/
 │   └── ...
 ├── services/           # Business logic & API calls
 │   ├── googleCalendarService.js
+│   ├── googleDriveService.js
 │   ├── authService.js
 │   └── __tests__/      # Service tests
 ├── firebase.js         # Firebase configuration
@@ -177,6 +178,127 @@ Located in `testing/testUtils.js`:
 1. Create service in `src/services/yourService.js`
 2. Create test file `src/services/__tests__/yourService.test.js`
 3. Use service in components
+
+### Google Drive Integration Development
+
+The application includes a comprehensive Google Drive integration for image uploads that works seamlessly with rich text editors.
+
+#### Architecture Overview
+- **Frontend**: `googleDriveService.js` handles uploads and CORS issues
+- **Backend**: Google Apps Script proxy manages Drive API calls
+- **Storage**: Images stored in Google Drive with public access
+- **Editor Integration**: Blob URLs created for CORS-free editor embedding
+
+#### Key Components
+
+**GoogleDriveService (`src/services/googleDriveService.js`)**
+- `uploadImage(file, fileName)` - Upload image to Drive via proxy
+- `getImageAsBase64(imageUrl)` - Fetch image data as base64
+- `getImageInfo(imageUrl)` - Get image metadata
+- `convertToEditorUrl(proxyUrl)` - Convert proxy URL to blob URL
+- `deleteImage(imageUrl)` - Delete image from Drive
+
+#### Development Workflow
+
+**Testing Image Uploads:**
+```bash
+# Test Google Drive integration
+npm test -- --testNamePattern="GoogleDriveService"
+
+# Manual testing in browser
+# 1. Start dev server: npm run dev:skip-tests
+# 2. Navigate to a page with image upload
+# 3. Upload an image and check console logs
+# 4. Verify image appears in your Google Drive
+```
+
+**Debugging CORS Issues:**
+```javascript
+// Enable verbose logging in googleDriveService.js
+console.log('Upload result:', result);
+console.log('Converting to editor URL:', proxyUrl);
+console.log('Created blob URL:', blobUrl);
+```
+
+**Google Apps Script Development:**
+1. Make changes to your Apps Script code
+2. Save the script (auto-deploys to existing web app)
+3. Test changes immediately - no re-deployment needed
+4. Check Apps Script execution logs for server-side debugging
+
+#### Common Development Tasks
+
+**Adding New Image Upload Features:**
+1. Import `googleDriveService` in your component
+2. Use `uploadImage()` method with file input
+3. Handle the returned URL (already editor-compatible)
+4. Add error handling for upload failures
+
+**Handling Different Image Formats:**
+```javascript
+// Service automatically detects MIME types
+const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const isSupported = file.type && supportedTypes.includes(file.type);
+```
+
+**Editor Integration:**
+```javascript
+// For rich text editors expecting direct image URLs
+const editorUrl = await googleDriveService.uploadImage(file);
+// editorUrl is already a blob URL that works with any editor
+
+// For manual blob URL conversion (if needed)
+const blobUrl = await googleDriveService.convertToEditorUrl(proxyUrl);
+```
+
+#### Environment Variables for Development
+
+```env
+# Required for Google Drive integration
+REACT_APP_GOOGLE_DRIVE_PROXY_URL=https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
+
+# Optional: Set to 'development' for verbose logging
+NODE_ENV=development
+```
+
+#### Troubleshooting Common Issues
+
+**Image Upload Fails:**
+- Check Google Apps Script execution logs
+- Verify proxy URL is correct in `.env`
+- Ensure Apps Script has proper permissions
+- Check file size limits (10MB default)
+
+**Images Don't Display in Editor:**
+- Check browser console for CORS errors
+- Verify blob URL generation is working
+- Test with `?format=json` parameter manually
+- Check if editor supports blob URLs
+
+**CORS Errors:**
+- Ensure Apps Script returns proper CORS headers
+- Check if `createCORSResponse()` function is used
+- Verify editor is using blob URLs, not direct Drive URLs
+- Test proxy URL manually in browser
+
+#### Performance Considerations
+
+**Image Optimization:**
+- Resize large images before upload
+- Use appropriate image formats (WebP when supported)
+- Consider thumbnail generation for large galleries
+
+**Caching Strategy:**
+```javascript
+// Blob URLs are automatically cached by browser
+// For persistent caching, store URLs in localStorage
+localStorage.setItem(`image_${fileId}`, blobUrl);
+```
+
+**Rate Limiting:**
+- Google Apps Script has built-in rate limiting
+- Implement client-side upload queuing for multiple files
+- Show progress indicators for large uploads
 
 ### Environment Variables
 Add to `.env` file:
