@@ -367,6 +367,75 @@ const TiptapEditor = ({
     }
   }, [value, editor]);
 
+  // Add tooltips to broken images (simple approach)
+  React.useEffect(() => {
+    if (!editor) return;
+
+    const addTooltipsToBrokenImages = () => {
+      const editorElement = editor.view.dom;
+      const images = editorElement.querySelectorAll('img.tiptap-image');
+      
+      images.forEach((img) => {
+        // Skip if already has tooltip
+        if (img.dataset.hasTooltip) return;
+        
+        const addTooltip = () => {
+          img.dataset.hasTooltip = 'true';
+          
+          // Generate Google Drive path
+          const generatePath = () => {
+            if (!outingData?.startDateTime || !outingData?.eventName) {
+              return '/Troop Manager/Images/';
+            }
+            
+            const startDate = new Date(outingData.startDateTime);
+            const formattedDate = startDate.toISOString().split('T')[0];
+            const cleanEventName = outingData.eventName
+              .toLowerCase()
+              .replace(/[^a-z0-9\s]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/-+/g, '-')
+              .replace(/^-|-$/g, '');
+            
+            return `/Troop Manager/Packets/${formattedDate}-${cleanEventName}/Images/`;
+          };
+          
+          const fileName = img.alt || img.title || 'image.jpg';
+          const fullPath = generatePath() + fileName;
+          
+          // Set title attribute for simple tooltip
+          img.title = `Missing Image - Google Drive Path: ${fullPath}`;
+          
+          console.log('🚨 Missing image:', fullPath);
+        };
+        
+        // Check if already broken
+        if (img.complete && img.naturalWidth === 0) {
+          addTooltip();
+        } else {
+          // Listen for error
+          img.addEventListener('error', addTooltip, { once: true });
+        }
+      });
+    };
+
+    // Run with delay to let images load
+    setTimeout(addTooltipsToBrokenImages, 1000);
+    
+    const handleUpdate = () => {
+      setTimeout(addTooltipsToBrokenImages, 500);
+    };
+    
+    editor.on('update', handleUpdate);
+
+    return () => {
+      if (editor) {
+        editor.off('update', handleUpdate);
+      }
+    };
+  }, [editor, outingData]);
+
+
   const handleImageUpload = async () => {
     const input = document.createElement('input');
     input.type = 'file';
