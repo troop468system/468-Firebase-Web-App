@@ -10,7 +10,28 @@ class GoogleDriveService {
     }
   }
 
-  async uploadImage(file, fileName = null) {
+  // Generate packet folder path based on outing data
+  generatePacketFolderPath(outingData) {
+    if (!outingData || !outingData.startDateTime || !outingData.eventName) {
+      return 'Troop Manager/Images';
+    }
+    
+    // Format start date as YYYY-MM-DD
+    const startDate = new Date(outingData.startDateTime);
+    const formattedDate = startDate.toISOString().split('T')[0];
+    
+    // Clean event name for folder
+    const cleanEventName = outingData.eventName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    
+    return `Troop Manager/Packets/${formattedDate}-${cleanEventName}/Images`;
+  }
+
+  async uploadImage(file, fileName = null, outingData = null) {
     try {
       // Validate configuration
       if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
@@ -29,6 +50,9 @@ class GoogleDriveService {
         throw new Error('Please select a valid image file');
       }
 
+      // Generate folder path based on outing data
+      const folderPath = outingData ? this.generatePacketFolderPath(outingData) : 'Troop Manager/Images';
+      
       // Generate unique filename
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop();
@@ -36,10 +60,11 @@ class GoogleDriveService {
         ? `${fileName}_${timestamp}.${fileExtension}`
         : `image_${timestamp}.${fileExtension}`;
 
-      console.log('Uploading image to Google Drive via Apps Script proxy...');
+      console.log('Uploading image to Google Drive via Apps Script proxy to folder:', folderPath);
 
       // Convert file to base64
-      const fileData = await this.fileToBase64(file);
+      const fullDataUrl = await this.fileToBase64(file);
+      const fileData = fullDataUrl.split(',')[1]; // Extract just base64 part
       
       // Upload via Google Apps Script proxy
       const response = await fetch(this.proxyUrl, {
@@ -51,7 +76,7 @@ class GoogleDriveService {
           fileName: uniqueFileName,
           fileData: fileData,
           mimeType: file.type,
-          folderName: this.folderName
+          folderPath: folderPath
         })
       });
 
@@ -128,16 +153,11 @@ class GoogleDriveService {
     }
   }
 
-  // Convert file to base64 for uploading
   fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => {
-        // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
-        const base64String = reader.result.split(',')[1];
-        resolve(base64String);
-      };
+      reader.onload = () => resolve(reader.result);
       reader.onerror = error => reject(error);
     });
   }
@@ -198,214 +218,6 @@ class GoogleDriveService {
     }
     
     return null;
-  }
-
-  // Extract all Google Drive image URLs from HTML content
-  extractImageUrlsFromContent(htmlContent) {
-    if (!htmlContent) return [];
-    
-    const imageUrls = [];
-    const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
-    let match;
-    
-    while ((match = imgRegex.exec(htmlContent)) !== null) {
-      const src = match[1];
-      
-      // Check if it's a Google Drive URL (either direct or proxy)
-      if (src.includes('drive.google.com') || 
-          (this.proxyUrl && src.includes(this.proxyUrl.split('?')[0]))) {
-        imageUrls.push(src);
-      }
-    }
-    
-    return imageUrls;
-  }
-
-  // Extract all images from an outing data object (all rich text fields)
-  extractAllImagesFromOuting(outingData) {
-    if (!outingData) return [];
-    
-    const richTextFields = [
-      outingData.overview,
-      outingData.detail,
-      outingData.packingList,
-      outingData.parking,
-      outingData.nearbyHospital,
-      outingData.notes,
-      outingData.contacts,
-      outingData.references
-    ];
-    
-    const allImages = [];
-    richTextFields.forEach(content => {
-      if (content) {
-        const images = this.extractImageUrlsFromContent(content);
-        allImages.push(...images);
-      }
-    });
-    
-    // Remove duplicates and return unique image URLs
-    return [...new Set(allImages)];
-  }
-
-  // Extract file IDs from image URLs for batch operations
-  extractFileIdsFromImageUrls(imageUrls) {
-    const fileIds = [];
-    
-    imageUrls.forEach(url => {
-      const fileId = this.extractFileIdFromUrl(url);
-      if (fileId) {
-        fileIds.push(fileId);
-      }
-    });
-    
-    return [...new Set(fileIds)]; // Remove duplicates
-  }
-
-  // Batch delete multiple images by file IDs
-  async batchDeleteImages(fileIds) {
-    try {
-      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
-        console.log('Google Drive proxy not configured, skipping batch image cleanup.');
-        return { cleaned: 0, errors: [], message: 'Proxy not configured' };
-      }
-
-      if (!fileIds || fileIds.length === 0) {
-        console.log('No images to clean up.');
-        return { cleaned: 0, errors: [] };
-      }
-
-      console.log(`Batch deleting ${fileIds.length} images...`);
-
-      // Send batch delete request to Apps Script
-      const response = await fetch(`${this.proxyUrl}?action=batchDelete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ fileIds })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log(`Successfully batch deleted ${result.cleaned} images`);
-        return {
-          cleaned: result.cleaned,
-          errors: result.errors || [],
-          message: `Batch deleted ${result.cleaned} images`
-        };
-      } else {
-        throw new Error(result.error || 'Batch delete failed');
-      }
-    } catch (error) {
-      console.error('Error during batch image cleanup:', error);
-      return { 
-        cleaned: 0, 
-        errors: [{ error: error.message }], 
-        message: 'Batch delete failed' 
-      };
-    }
-  }
-
-  // Improved cleanup using batch operations
-  async cleanupUnusedImagesBatch(initialOutingData, finalOutingData) {
-    try {
-      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
-        console.log('Google Drive proxy not configured, skipping image cleanup.');
-        return { cleaned: 0, errors: [] };
-      }
-
-      // Extract all images from initial and final outing data
-      const initialImages = this.extractAllImagesFromOuting(initialOutingData);
-      const finalImages = this.extractAllImagesFromOuting(finalOutingData);
-      
-      console.log(`Initial images: ${initialImages.length}, Final images: ${finalImages.length}`);
-      
-      // Find images that were removed
-      const removedImages = initialImages.filter(img => !finalImages.includes(img));
-      
-      if (removedImages.length === 0) {
-        console.log('No images to clean up.');
-        return { cleaned: 0, errors: [] };
-      }
-
-      console.log(`Found ${removedImages.length} images to clean up:`, removedImages);
-      
-      // Extract file IDs for batch deletion
-      const fileIdsToDelete = this.extractFileIdsFromImageUrls(removedImages);
-      
-      if (fileIdsToDelete.length === 0) {
-        console.log('No valid file IDs found for cleanup.');
-        return { cleaned: 0, errors: [] };
-      }
-
-      // Perform batch deletion
-      return await this.batchDeleteImages(fileIdsToDelete);
-      
-    } catch (error) {
-      console.error('Error during batch image cleanup:', error);
-      return { cleaned: 0, errors: [{ error: error.message }] };
-    }
-  }
-
-  // Legacy method - kept for backward compatibility
-  async cleanupUnusedImages(oldContent = '', newContent = '') {
-    console.warn('cleanupUnusedImages is deprecated, use cleanupUnusedImagesBatch instead');
-    
-    // Convert to outing data format for the new method
-    const initialData = {
-      overview: oldContent,
-      detail: '', packingList: '', parking: '', 
-      nearbyHospital: '', notes: '', contacts: '', references: ''
-    };
-    
-    const finalData = {
-      overview: newContent,
-      detail: '', packingList: '', parking: '', 
-      nearbyHospital: '', notes: '', contacts: '', references: ''
-    };
-    
-    return await this.cleanupUnusedImagesBatch(initialData, finalData);
-  }
-
-  // Bulk cleanup function to find and remove orphaned images across all content
-  async bulkCleanupOrphanedImages(allContentArray = []) {
-    try {
-      // Check if proxy is configured
-      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
-        console.log('Google Drive proxy not configured, skipping bulk image cleanup.');
-        return { cleaned: 0, errors: [], message: 'Proxy not configured' };
-      }
-
-      // Combine all content to find all referenced images
-      const allContent = allContentArray.join(' ');
-      const referencedImages = this.extractImageUrlsFromContent(allContent);
-      
-      console.log(`Found ${referencedImages.length} images referenced in content`);
-      
-      // For now, this is a placeholder - in a real implementation, you would:
-      // 1. List all files in the Google Drive folder
-      // 2. Compare with referenced images
-      // 3. Delete unreferenced images
-      
-      // This would require additional Google Apps Script endpoints to list folder contents
-      console.log('Bulk cleanup would require additional Google Apps Script endpoints to list folder contents');
-      
-      return { 
-        cleaned: 0, 
-        errors: [], 
-        message: `Found ${referencedImages.length} referenced images. Bulk cleanup requires additional implementation.`,
-        referencedImages: referencedImages.length
-      };
-    } catch (error) {
-      console.error('Error during bulk image cleanup:', error);
-      return { cleaned: 0, errors: [{ error: error.message }], message: 'Bulk cleanup failed' };
-    }
   }
 
   // Convenient method to get image info including data URL
@@ -544,6 +356,154 @@ class GoogleDriveService {
       } else {
         throw new Error(error.message || 'Failed to delete image. Please try again.');
       }
+    }
+  }
+
+  // Extract image URLs from HTML content
+  extractImageUrlsFromContent(htmlContent) {
+    if (!htmlContent) return [];
+    
+    const imgRegex = /<img[^>]+src="([^"]+)"/g;
+    const urls = [];
+    let match;
+    
+    while ((match = imgRegex.exec(htmlContent)) !== null) {
+      urls.push(match[1]);
+    }
+    
+    return urls;
+  }
+
+  // Extract all images from outing data
+  extractAllImagesFromOuting(outingData) {
+    if (!outingData) return [];
+    
+    const allImages = [];
+    
+    // Check all rich text fields for images
+    const fieldsToCheck = [
+      'description',
+      'itinerary', 
+      'packingList',
+      'safetyNotes',
+      'emergencyContacts',
+      'additionalInfo'
+    ];
+    
+    fieldsToCheck.forEach(field => {
+      if (outingData[field]) {
+        const images = this.extractImageUrlsFromContent(outingData[field]);
+        allImages.push(...images);
+      }
+    });
+    
+    return [...new Set(allImages)]; // Remove duplicates
+  }
+
+  // Extract file ID from various URL formats
+  extractFileIdFromUrl(url) {
+    if (!url) return null;
+    
+    // Handle Google Apps Script proxy URLs
+    const fileIdMatch = url.match(/fileId=([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch) {
+      return fileIdMatch[1];
+    }
+    
+    // Handle direct Google Drive URLs
+    const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch) {
+      return driveMatch[1];
+    }
+    
+    // Handle uc?id= format
+    const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (ucMatch) {
+      return ucMatch[1];
+    }
+    
+    return null;
+  }
+
+  // Convert image URLs to file IDs
+  extractFileIdsFromImageUrls(imageUrls) {
+    return imageUrls
+      .map(url => this.extractFileIdFromUrl(url))
+      .filter(fileId => fileId !== null);
+  }
+
+  // Batch delete images
+  async batchDeleteImages(fileIds) {
+    if (!fileIds || fileIds.length === 0) {
+      console.log('No images to delete');
+      return { success: true, deletedCount: 0 };
+    }
+
+    try {
+      console.log('Batch deleting images:', fileIds);
+      
+      const response = await fetch(`${this.proxyUrl}?action=batchDelete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileIds: fileIds
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Batch delete failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Batch delete failed');
+      }
+
+      console.log('Batch delete completed:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('Error in batch delete:', error);
+      throw error;
+    }
+  }
+
+  // Clean up unused images by comparing initial and final outing data
+  async cleanupUnusedImagesBatch(initialOutingData, finalOutingData) {
+    try {
+      const initialImages = this.extractAllImagesFromOuting(initialOutingData);
+      const finalImages = this.extractAllImagesFromOuting(finalOutingData);
+      
+      // Find images that were removed
+      const removedImages = initialImages.filter(img => !finalImages.includes(img));
+      
+      if (removedImages.length === 0) {
+        console.log('No images to clean up');
+        return { success: true, deletedCount: 0 };
+      }
+      
+      console.log('Images to clean up:', removedImages);
+      
+      // Extract file IDs from removed images
+      const fileIdsToDelete = this.extractFileIdsFromImageUrls(removedImages);
+      
+      if (fileIdsToDelete.length === 0) {
+        console.log('No valid file IDs found for cleanup');
+        return { success: true, deletedCount: 0 };
+      }
+      
+      // Batch delete the unused images
+      const result = await this.batchDeleteImages(fileIdsToDelete);
+      console.log('Cleanup completed:', result);
+      
+      return result;
+      
+    } catch (error) {
+      console.error('Error during image cleanup:', error);
+      throw error;
     }
   }
 }

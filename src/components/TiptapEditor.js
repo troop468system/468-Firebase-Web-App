@@ -27,20 +27,309 @@ import {
 } from '@mui/icons-material';
 import googleDriveService from '../services/googleDriveService';
 
+// Custom Image extension that handles missing images and delete functionality
+const CustomImage = Image.extend({
+  addOptions() {
+    return {
+      ...this.parent?.(),
+      outingData: null,
+    }
+  },
+  
+  addNodeView() {
+    return ({ node, HTMLAttributes, getPos, editor }) => {
+      const container = document.createElement('span');
+      container.style.cssText = `
+        display: inline-block;
+        position: relative;
+        margin: 2px;
+      `;
+      
+      const img = document.createElement('img');
+      Object.assign(img, HTMLAttributes);
+      img.src = node.attrs.src;
+      img.alt = node.attrs.alt || '';
+      img.title = node.attrs.title || '';
+      img.style.cssText = `
+        max-width: 100%;
+        height: auto;
+        display: block;
+      `;
+      
+      // Function to create delete button
+      const createDeleteButton = () => {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '×';
+        deleteBtn.style.cssText = `
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(239, 68, 68, 0.9);
+          color: white;
+          font-size: 14px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          transition: background-color 0.2s;
+        `;
+        
+        deleteBtn.addEventListener('mouseenter', () => {
+          deleteBtn.style.background = 'rgba(220, 38, 38, 1)';
+        });
+        
+        deleteBtn.addEventListener('mouseleave', () => {
+          deleteBtn.style.background = 'rgba(239, 68, 68, 0.9)';
+        });
+        
+        deleteBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          try {
+            // Delete from Google Drive if it's a valid image
+            if (node.attrs.src && !node.attrs.src.startsWith('blob:')) {
+              await googleDriveService.deleteImage(node.attrs.src);
+            }
+            
+            // Remove from editor
+            if (typeof getPos === 'function') {
+              const pos = getPos();
+              editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+            }
+          } catch (error) {
+            console.error('Error deleting image:', error);
+            // Still remove from editor even if Google Drive delete fails
+            if (typeof getPos === 'function') {
+              const pos = getPos();
+              editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+            }
+          }
+        });
+        
+        return deleteBtn;
+      };
+      
+      // Function to generate Google Drive path for tooltip
+      const getGoogleDrivePath = (src, outingData) => {
+        if (!src) return 'Unknown path';
+        
+        // Generate human-readable Google Drive path
+        const generateHumanPath = (outingData, fileName) => {
+          if (!outingData || !outingData.startDateTime || !outingData.eventName) {
+            return '/Troop Manager/Images/';
+          }
+          
+          // Format start date as YYYY-MM-DD
+          const startDate = new Date(outingData.startDateTime);
+          const formattedDate = startDate.toISOString().split('T')[0];
+          
+          // Clean event name for folder
+          const cleanEventName = outingData.eventName
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+          
+          return `/Troop Manager/Packets/${formattedDate}-${cleanEventName}/Images/`;
+        };
+        
+        // Extract filename from alt text or generate generic name
+        const fileName = node.attrs.alt || node.attrs.title || 'uploaded-image.jpg';
+        
+        // Get the human-readable folder path
+        const folderPath = generateHumanPath(this.options.outingData, fileName);
+        const fullPath = folderPath + fileName;
+        
+        return fullPath;
+      };
+      
+      // Add delete button to working images (always show for working images)
+      const deleteBtn = createDeleteButton();
+      container.appendChild(deleteBtn);
+      
+      // Show delete button on hover
+      container.addEventListener('mouseenter', () => {
+        deleteBtn.style.display = 'flex';
+      });
+      
+      container.addEventListener('mouseleave', () => {
+        deleteBtn.style.display = 'none';
+      });
+      
+      // Initially hide delete button
+      deleteBtn.style.display = 'none';
+      
+      // Handle broken/missing images
+      img.onerror = () => {
+        console.log('Image failed to load, showing missing image token:', node.attrs.src);
+        container.innerHTML = '';
+        
+        // Create missing image token
+        const token = document.createElement('div');
+        token.style.cssText = `
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          background-color: #fef3c7;
+          color: #92400e;
+          border: 1px solid #fbbf24;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          position: relative;
+          cursor: help;
+          max-width: 200px;
+        `;
+        
+        // Warning icon (SVG)
+        const icon = document.createElement('div');
+        icon.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+          </svg>
+        `;
+        icon.style.cssText = `
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+        `;
+        token.appendChild(icon);
+        
+        // Text
+        const text = document.createElement('span');
+        text.textContent = 'Missing image';
+        text.style.cssText = `
+          color: #92400e;
+          flex: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        `;
+        token.appendChild(text);
+        
+        // Delete button for missing image token
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '×';
+        deleteBtn.style.cssText = `
+          position: absolute;
+          top: -6px;
+          right: -6px;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          border: none;
+          background: #ef4444;
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+        `;
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Remove from editor
+          if (typeof getPos === 'function') {
+            const pos = getPos();
+            editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+          }
+        });
+        token.appendChild(deleteBtn);
+        
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.style.cssText = `
+          position: absolute;
+          bottom: calc(100% + 8px);
+          left: 50%;
+          transform: translateX(-50%);
+          background: #ffffff;
+          color: #374151;
+          padding: 12px;
+          border-radius: 6px;
+          font-size: 11px;
+          z-index: 1000;
+          display: none;
+          min-width: 250px;
+          max-width: 350px;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+          border: 1px solid #e5e7eb;
+          white-space: pre-line;
+          font-family: 'Monaco', 'Menlo', monospace;
+        `;
+        
+        // Create tooltip arrow
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 6px solid #ffffff;
+        `;
+        
+        const tooltipText = `📁 Google Drive Location:\n${getGoogleDrivePath(node.attrs.src, this.options.outingData)}\n\n🔧 Troubleshooting Steps:\n• Check if file exists in Google Drive\n• Verify permissions: "Anyone with link"\n• Confirm file is not deleted/moved\n• Try re-uploading the image`;
+        tooltip.innerHTML = tooltipText.replace(/\n/g, '<br>');
+        tooltip.appendChild(arrow);
+        
+        // Show/hide tooltip on hover
+        token.addEventListener('mouseenter', () => {
+          tooltip.style.display = 'block';
+        });
+        
+        token.addEventListener('mouseleave', () => {
+          tooltip.style.display = 'none';
+        });
+        
+        container.appendChild(token);
+        container.appendChild(tooltip);
+      };
+      
+      // Start loading the image - add image first, then delete button
+      container.appendChild(img);
+      
+      return {
+        dom: container,
+      };
+    };
+  },
+});
+
 const TiptapEditor = ({ 
   value = '', 
   onChange, 
   onBlur,
   placeholder = 'Start typing...',
   minHeight = '150px',
-  disabled = false 
+  disabled = false,
+  outingData = null 
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: false, // Exclude link from StarterKit to avoid duplicate
+      }),
       Image.configure({
         inline: true,
         allowBase64: false,
@@ -103,75 +392,19 @@ const TiptapEditor = ({
       setUploading(true);
       setUploadError(null);
 
-      // Create animated loading indicator
-      const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-      let spinnerIndex = 0;
-      let loadingPosition = null;
-      let animationInterval = null;
-      
-      if (editor) {
-        // Get current cursor position
-        const { from } = editor.state.selection;
-        loadingPosition = from;
-        
-        // Insert initial spinner frame
-        editor.chain().focus().insertContent(spinnerFrames[0]).run();
-        
-        // Start animation
-        animationInterval = setInterval(() => {
-          if (editor && loadingPosition !== null) {
-            spinnerIndex = (spinnerIndex + 1) % spinnerFrames.length;
-            
-            // Replace the current spinner with next frame
-            editor
-              .chain()
-              .focus()
-              .setTextSelection({ from: loadingPosition, to: loadingPosition + 1 })
-              .insertContent(spinnerFrames[spinnerIndex])
-              .run();
-          }
-        }, 100); // Update every 100ms for smooth animation
-      }
-
       try {
-        const imageUrl = await googleDriveService.uploadImage(file);
+        const imageUrl = await googleDriveService.uploadImage(file, null, outingData);
         
-        // Stop animation
-        if (animationInterval) {
-          clearInterval(animationInterval);
-        }
-        
-        if (editor && loadingPosition !== null) {
-          // Replace the spinner with the image
-          editor
-            .chain()
-            .focus()
-            .setTextSelection({ from: loadingPosition, to: loadingPosition + 1 })
-            .deleteSelection()
-            .setImage({ 
-              src: imageUrl,
-              alt: file.name,
-              title: file.name 
-            })
-            .run();
+        if (editor) {
+          editor.chain().focus().setImage({ 
+            src: imageUrl,
+            alt: file.name,
+            title: file.name 
+          }).run();
         }
       } catch (error) {
         console.error('Image upload failed:', error);
         setUploadError(error.message || 'Failed to upload image');
-        
-        // Stop animation and remove spinner on error
-        if (animationInterval) {
-          clearInterval(animationInterval);
-        }
-        
-        if (editor && loadingPosition !== null) {
-          editor
-            .chain()
-            .focus()
-            .setTextSelection({ from: loadingPosition, to: loadingPosition + 1 })
-            .deleteSelection()
-            .run();
-        }
       } finally {
         setUploading(false);
       }
@@ -325,23 +558,27 @@ const TiptapEditor = ({
 
         <ButtonGroup size="small" variant="outlined">
           <Tooltip title="Undo">
-            <IconButton
-              onClick={() => editor.chain().focus().undo().run()}
-              disabled={!editor.can().undo()}
-              size="small"
-            >
-              <UndoIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                size="small"
+              >
+                <UndoIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
           
           <Tooltip title="Redo">
-            <IconButton
-              onClick={() => editor.chain().focus().redo().run()}
-              disabled={!editor.can().redo()}
-              size="small"
-            >
-              <RedoIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                size="small"
+              >
+                <RedoIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
         </ButtonGroup>
       </Box>
