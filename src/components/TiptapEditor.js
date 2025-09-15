@@ -330,7 +330,25 @@ const TiptapEditor = ({
       StarterKit.configure({
         link: false, // Exclude link from StarterKit to avoid duplicate
       }),
-      Image.configure({
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            'data-original-url': {
+              default: null,
+              parseHTML: element => element.getAttribute('data-original-url'),
+              renderHTML: attributes => {
+                if (!attributes['data-original-url']) {
+                  return {}
+                }
+                return {
+                  'data-original-url': attributes['data-original-url'],
+                }
+              },
+            },
+          }
+        },
+      }).configure({
         inline: true,
         allowBase64: false,
         HTMLAttributes: {
@@ -367,6 +385,85 @@ const TiptapEditor = ({
     }
   }, [value, editor]);
 
+  // Hybrid approach: Fix broken blob URLs by using original URLs
+  React.useEffect(() => {
+    if (!editor) return;
+
+    const fixBrokenBlobImages = () => {
+      const editorElement = editor.view.dom;
+      const images = editorElement.querySelectorAll('img.tiptap-image');
+      
+      images.forEach((img) => {
+        // Skip if already processed
+        if (img.dataset.processed) return;
+        
+        const originalUrl = img.getAttribute('data-original-url');
+        
+        // Only process images that have an original URL backup
+        if (!originalUrl) return;
+        
+        const handleBrokenImage = async () => {
+          console.log('Broken blob URL detected, converting original URL to new blob URL:', img.src, '→', originalUrl);
+          
+          try {
+            // Use the same conversion method that worked during upload
+            const newBlobUrl = await googleDriveService.convertToEditorUrl(originalUrl);
+            console.log('Successfully converted original URL to new blob URL:', newBlobUrl);
+            
+            img.src = newBlobUrl;
+            img.dataset.processed = 'true';
+            
+            // Remove the data attribute since we're now using a new blob URL
+            img.removeAttribute('data-original-url');
+          } catch (error) {
+            console.error('Failed to convert original URL to blob URL:', error);
+            console.error('Original URL that failed:', originalUrl);
+            
+            // Fallback: try using the original URL directly (might not work but worth trying)
+            img.src = originalUrl;
+            img.dataset.processed = 'true';
+            img.removeAttribute('data-original-url');
+          }
+        };
+        
+        // Check if image is already broken (common after page refresh)
+        if (img.complete && img.naturalWidth === 0) {
+          handleBrokenImage();
+        } else {
+          // Listen for future errors (blob URL expiration)
+          img.addEventListener('error', handleBrokenImage, { once: true });
+          
+          // Special handling for blob URLs - they often fail after refresh
+          if (img.src.startsWith('blob:')) {
+            // Give blob URL a chance, but if it fails after a short time, switch
+            setTimeout(() => {
+              if (img.naturalWidth === 0 && !img.dataset.processed) {
+                console.log('Blob URL failed to load, switching to original URL');
+                handleBrokenImage();
+              }
+            }, 1000);
+          }
+        }
+      });
+    };
+
+    // Run immediately to catch already broken images
+    fixBrokenBlobImages();
+    
+    // Also run when content updates
+    const handleUpdate = () => {
+      setTimeout(fixBrokenBlobImages, 100);
+    };
+    
+    editor.on('update', handleUpdate);
+
+    return () => {
+      if (editor) {
+        editor.off('update', handleUpdate);
+      }
+    };
+  }, [editor]);
+
   const handleImageUpload = async () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -392,19 +489,72 @@ const TiptapEditor = ({
       setUploading(true);
       setUploadError(null);
 
+      // Insert simple animated Unicode spinner (like before)
+      const spinnerChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+      let spinnerFrame = 0;
+      
+      // Insert just the spinner character
+      if (editor) {
+        editor.chain().focus().insertContent(spinnerChars[0]).run();
+        
+        // Start the spinner animation
+        const animateSpinner = () => {
+          spinnerFrame = (spinnerFrame + 1) % spinnerChars.length;
+          const newChar = spinnerChars[spinnerFrame];
+          
+          // Replace the last character (spinner) with the new one
+          const { from, to } = editor.state.selection;
+          const pos = to - 1; // Position of the spinner character
+          
+          if (pos >= 0) {
+            editor.chain()
+              .setTextSelection({ from: pos, to: pos + 1 })
+              .insertContent(newChar)
+              .run();
+          }
+        };
+        
+        // Store the interval globally so we can clear it
+        window.currentSpinnerInterval = setInterval(animateSpinner, 100);
+      }
+
       try {
-        const imageUrl = await googleDriveService.uploadImage(file, null, outingData);
+        const uploadResult = await googleDriveService.uploadImage(file, null, outingData);
         
         if (editor) {
+          // Clear the spinner animation
+          clearInterval(window.currentSpinnerInterval);
+          delete window.currentSpinnerInterval;
+          
+          // Remove the spinner character by undoing the last action
+          editor.chain().focus().undo().run();
+          
+          // Handle both object and string return types
+          const imageUrl = typeof uploadResult === 'object' ? uploadResult.editorUrl : uploadResult;
+          const originalUrl = typeof uploadResult === 'object' ? uploadResult.originalUrl : uploadResult;
+          
+          // Insert the actual image
           editor.chain().focus().setImage({ 
             src: imageUrl,
             alt: file.name,
-            title: file.name 
+            title: file.name,
+            'data-original-url': originalUrl  // Store original URL for backup
           }).run();
+          
+          console.log('Image inserted with blob URL for display and original URL as backup');
         }
       } catch (error) {
         console.error('Image upload failed:', error);
         setUploadError(error.message || 'Failed to upload image');
+        
+        // Remove the spinner on error
+        if (editor) {
+          // Clear the spinner animation
+          clearInterval(window.currentSpinnerInterval);
+          delete window.currentSpinnerInterval;
+          
+          editor.chain().focus().undo().run();
+        }
       } finally {
         setUploading(false);
       }

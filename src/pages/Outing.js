@@ -93,7 +93,8 @@ import {
   Warning as WarningIcon,
   ArrowUpward as ArrowUpwardIcon,
   ArrowDownward as ArrowDownwardIcon,
-  UnfoldMore as UnfoldMoreIcon
+  UnfoldMore as UnfoldMoreIcon,
+  Help as HelpIcon
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -216,7 +217,11 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
                   size="small"
                   sx={{ 
                     borderRadius: 2,
-                    '& .MuiInputBase-input': { fontSize: '0.875rem' }
+                    '& .MuiInputBase-input': { fontSize: '0.875rem' },
+                    '& .MuiOutlinedInput-root': {
+                      minHeight: '40px',
+                      height: '40px'
+                    }
                   }}
                 />
               )}
@@ -233,7 +238,11 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
               size="small"
               sx={{ 
                 borderRadius: 2,
-                '& .MuiInputBase-input': { fontSize: '0.875rem' }
+                '& .MuiInputBase-input': { fontSize: '0.875rem' },
+                '& .MuiOutlinedInput-root': {
+                  minHeight: '40px',
+                  height: '40px'
+                }
               }}
             />
           </Grid>
@@ -248,7 +257,11 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
               size="small"
               sx={{ 
                 borderRadius: 2,
-                '& .MuiInputBase-input': { fontSize: '0.875rem' }
+                '& .MuiInputBase-input': { fontSize: '0.875rem' },
+                '& .MuiOutlinedInput-root': {
+                  minHeight: '40px',
+                  height: '40px'
+                }
               }}
             />
           </Grid>
@@ -274,7 +287,11 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
                   size="small"
                   sx={{ 
                     borderRadius: 2,
-                    '& .MuiInputBase-input': { fontSize: '0.875rem' }
+                    '& .MuiInputBase-input': { fontSize: '0.875rem' },
+                    '& .MuiOutlinedInput-root': {
+                      minHeight: '40px',
+                      height: '40px'
+                    }
                   }}
                   helperText=""
                 />
@@ -1571,7 +1588,13 @@ const Outing = () => {
           sx={{ mt: 3, mb: 2 }}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              width: '100%', 
+              gap: isMobile ? 1 : 2,
+              flexWrap: isMobile ? 'wrap' : 'nowrap'
+            }}>
               <EventIcon sx={{ color: 'primary.main' }} />
               <Typography variant="h6" sx={{ minWidth: 'fit-content' }}>
                 Outing Packets ({sortedOutings.length})
@@ -1582,15 +1605,16 @@ const Outing = () => {
                 placeholder="Search outings..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                size="small"
+                size={isMobile ? "small" : "small"}
                 sx={{ 
                   flexGrow: 1, 
-                  minWidth: 200,
+                  minWidth: isMobile ? 150 : 200,
+                  maxWidth: isMobile ? 200 : 'none',
                   '& .MuiOutlinedInput-root': {
-                    height: '56px'
+                    minHeight: isMobile ? '48px' : '64px'
                   },
                   '& .MuiOutlinedInput-input': {
-                    padding: '16.5px 14px'
+                    padding: isMobile ? '12px 14px' : '20px 14px'
                   }
                 }}
                 InputProps={{
@@ -1618,7 +1642,7 @@ const Outing = () => {
               />
               
               {/* Start Date Filter */}
-              <Box sx={{ position: 'relative', minWidth: 140 }}>
+              <Box sx={{ position: 'relative', minWidth: isMobile ? 100 : 140 }}>
                 <DateTimePicker
                   label="Start"
                   value={startDateFilter}
@@ -1629,11 +1653,24 @@ const Outing = () => {
                       {...params} 
                       size="small"
                       sx={{
+                        width: isMobile ? 100 : 140,
                         '& .MuiOutlinedInput-root': {
-                          height: '56px'
+                          minHeight: isMobile ? '48px' : '64px',
+                          height: isMobile ? '48px' : '64px',
+                          '& fieldset': {
+                            height: isMobile ? '48px' : '64px'
+                          }
                         },
                         '& .MuiOutlinedInput-input': {
-                          padding: '16.5px 14px'
+                          padding: isMobile ? '12px 8px' : '20px 14px',
+                          fontSize: isMobile ? '0.875rem' : '1rem',
+                          height: 'auto'
+                        },
+                        '& .MuiInputLabel-root': {
+                          fontSize: isMobile ? '0.875rem' : '1rem'
+                        },
+                        '& .MuiInputAdornment-root': {
+                          height: isMobile ? '48px' : '64px'
                         }
                       }}
                       onClick={(e) => e.stopPropagation()}
@@ -1663,7 +1700,7 @@ const Outing = () => {
               </Box>
               
               {/* End Date Filter */}
-              <Box sx={{ position: 'relative', minWidth: 140 }}>
+              <Box sx={{ position: 'relative', minWidth: isMobile ? 100 : 140 }}>
                 <DateTimePicker
                   label="End"
                   value={endDateFilter}
@@ -1674,11 +1711,24 @@ const Outing = () => {
                       {...params} 
                       size="small"
                       sx={{
+                        width: isMobile ? 100 : 140,
                         '& .MuiOutlinedInput-root': {
-                          height: '56px'
+                          minHeight: isMobile ? '48px' : '64px',
+                          height: isMobile ? '48px' : '64px',
+                          '& fieldset': {
+                            height: isMobile ? '48px' : '64px'
+                          }
                         },
                         '& .MuiOutlinedInput-input': {
-                          padding: '16.5px 14px'
+                          padding: isMobile ? '12px 8px' : '20px 14px',
+                          fontSize: isMobile ? '0.875rem' : '1rem',
+                          height: 'auto'
+                        },
+                        '& .MuiInputLabel-root': {
+                          fontSize: isMobile ? '0.875rem' : '1rem'
+                        },
+                        '& .MuiInputAdornment-root': {
+                          height: isMobile ? '48px' : '64px'
                         }
                       }}
                       onClick={(e) => e.stopPropagation()}
@@ -1711,12 +1761,17 @@ const Outing = () => {
               <Button
                 variant="contained"
                 size="small"
-                startIcon={<AddIcon />}
+                startIcon={!isMobile && <AddIcon />}
                 onClick={(e) => {
                   e.stopPropagation();
                   createNewOuting();
                 }}
-                sx={{ minWidth: 'fit-content' }}
+                sx={{ 
+                  minWidth: 'fit-content',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  padding: isMobile ? '6px 12px' : '6px 16px',
+                  height: isMobile ? '48px' : '64px'
+                }}
               >
                 New Outing
               </Button>
@@ -1787,7 +1842,6 @@ const Outing = () => {
                             )}
                           </Box>
                         </TableCell>
-                        <TableCell><strong>Location</strong></TableCell>
                         {!isMobile && <TableCell><strong>SICs</strong></TableCell>}
                         {!isMobile && <TableCell><strong>AICs</strong></TableCell>}
                         <TableCell><strong>Live View</strong></TableCell>
@@ -1853,25 +1907,6 @@ const Outing = () => {
                           <TableCell>
                             <Typography variant="body2">
                               {formatDateForTable(outing.endDateTime)}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography 
-                              variant="body2" 
-                              color={outing.destination ? "text.primary" : "text.secondary"}
-                              sx={{ 
-                                ...(isMobile && {
-                                  wordBreak: 'break-word',
-                                  hyphens: 'auto',
-                                  lineHeight: 1.2,
-                                  maxWidth: '120px'
-                                })
-                              }}
-                            >
-                              {outing.destination 
-                                ? highlightText(outing.destination, searchQuery)
-                                : 'Not specified'
-                              }
                             </Typography>
                           </TableCell>
                           {!isMobile && (
@@ -2009,6 +2044,8 @@ const Outing = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        minHeight: '56px',
+                        height: '56px'
                       }
                     }}
                   />
@@ -2029,6 +2066,19 @@ const Outing = () => {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
+                            minHeight: '56px',
+                            height: '56px',
+                            '& input': {
+                              height: 'auto',
+                              padding: '16.5px 14px'
+                            }
+                          },
+                          '& .MuiInputBase-root': {
+                            minHeight: '56px',
+                            height: '56px'
+                          },
+                          '& .MuiInputAdornment-root': {
+                            height: '56px'
                           }
                         }}
                       />
@@ -2051,6 +2101,19 @@ const Outing = () => {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
+                            minHeight: '56px',
+                            height: '56px',
+                            '& input': {
+                              height: 'auto',
+                              padding: '16.5px 14px'
+                            }
+                          },
+                          '& .MuiInputBase-root': {
+                            minHeight: '56px',
+                            height: '56px'
+                          },
+                          '& .MuiInputAdornment-root': {
+                            height: '56px'
                           }
                         }}
                       />
@@ -2069,6 +2132,8 @@ const Outing = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        minHeight: '56px',
+                        height: '56px'
                       }
                     }}
                   />
@@ -2085,6 +2150,8 @@ const Outing = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        minHeight: '56px',
+                        height: '56px'
                       }
                     }}
                   />
@@ -2112,23 +2179,30 @@ const Outing = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                       <Button
                         size="small"
-                        variant="outlined"
+                        variant="contained"
                         onClick={() => setHelpDialogOpen(true)}
+                        startIcon={<HelpIcon />}
+                        endIcon={<OpenInNewIcon />}
                         sx={{ 
                           mr: 1, 
                           minWidth: 'auto',
                           fontSize: '0.75rem',
-                          padding: '2px 8px',
-                          height: '24px',
-                          borderColor: '#ccc',
-                          color: '#666',
+                          padding: '4px 12px',
+                          height: '28px',
+                          backgroundColor: '#1976d2',
+                          color: 'white',
+                          borderRadius: '14px',
+                          textTransform: 'none',
+                          fontWeight: 500,
                           '&:hover': {
-                            borderColor: '#999',
-                            backgroundColor: 'rgba(0,0,0,0.04)'
-                          }
+                            backgroundColor: '#1565c0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)'
+                          },
+                          transition: 'all 0.2s ease-in-out'
                         }}
                       >
-                        Instruction
+                        Instructions
                       </Button>
                       <Typography variant="caption" sx={{ color: '#666' }}>
                         Go to{' '}
@@ -2380,6 +2454,7 @@ const Outing = () => {
                     onBlur={(value) => handleRichTextBlur('overview', value)}
                     placeholder="Describe the purpose and goals of this outing..."
                     minHeight="150px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>
@@ -2400,6 +2475,7 @@ const Outing = () => {
                     onBlur={(value) => handleRichTextBlur('detail', value)}
                     placeholder="Provide detailed information about this outing..."
                     minHeight="150px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>
@@ -2561,6 +2637,7 @@ const Outing = () => {
                     onBlur={(value) => handleRichTextBlur('packingList', value)}
                     placeholder="Items to bring, clothing recommendations, gear requirements..."
                     minHeight="120px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>
@@ -2576,11 +2653,12 @@ const Outing = () => {
                   borderRadius: 2
                 }}>
                   <TiptapEditor
-                  value={outingData.parking}
+                    value={outingData.parking}
                     onChange={(value) => handleInputChange('parking', value)}
                     onBlur={(value) => handleRichTextBlur('parking', value)}
                     placeholder="Carpool arrangements, public transit options, parking information, driving directions..."
                     minHeight="120px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>
@@ -2596,11 +2674,12 @@ const Outing = () => {
                   borderRadius: 2
                 }}>
                   <TiptapEditor
-                  value={outingData.nearbyHospital}
+                    value={outingData.nearbyHospital}
                     onChange={(value) => handleInputChange('nearbyHospital', value)}
                     onBlur={(value) => handleRichTextBlur('nearbyHospital', value)}
                     placeholder="Emergency procedures, nearby hospitals, medical facilities..."
                     minHeight="120px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>
@@ -2621,6 +2700,7 @@ const Outing = () => {
                     onBlur={(value) => handleRichTextBlur('notes', value)}
                     placeholder="Special instructions, important notes, rules and regulations..."
                     minHeight="120px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>
@@ -2636,11 +2716,12 @@ const Outing = () => {
                   borderRadius: 2
                 }}>
                   <TiptapEditor
-                  value={outingData.contacts}
+                    value={outingData.contacts}
                     onChange={(value) => handleInputChange('contacts', value)}
                     onBlur={(value) => handleRichTextBlur('contacts', value)}
                     placeholder="Emergency contacts, facility contacts, local authorities..."
                     minHeight="120px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>
@@ -2661,6 +2742,7 @@ const Outing = () => {
                     onBlur={(value) => handleRichTextBlur('references', value)}
                     placeholder="Websites, guides, maps, or other helpful references..."
                     minHeight="120px"
+                    outingData={outingData}
                   />
                 </Box>
               </Box>

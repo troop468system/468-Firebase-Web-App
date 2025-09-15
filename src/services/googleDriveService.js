@@ -3,6 +3,8 @@ class GoogleDriveService {
   constructor() {
     this.proxyUrl = process.env.REACT_APP_GOOGLE_DRIVE_PROXY_URL;
     this.folderName = 'TroopManager-Images';
+    // Global image cache to store converted blob URLs
+    this.imageCache = new Map();
     
     if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
       console.warn('Google Drive proxy not configured. Please set REACT_APP_GOOGLE_DRIVE_PROXY_URL in your .env file.');
@@ -108,16 +110,31 @@ class GoogleDriveService {
       console.log('Image uploaded successfully to Google Drive:', result.url);
       console.dir(result.url);
       
-      // For editor compatibility, convert proxy URL to blob URL
+      // For editor compatibility, convert proxy URL to blob URL but also store original
       console.log('Upload result:', result);
       
       try {
         const editorUrl = await this.convertToEditorUrl(result.url);
-        console.log('Returning editor-compatible URL:', editorUrl);
-        return editorUrl;
+        console.log('Returning both editor-compatible URL and original URL');
+        
+        // The convertToEditorUrl already caches the result, so subsequent calls will be instant
+        
+        // Return both URLs for hybrid approach
+        return {
+          editorUrl: editorUrl,        // Blob URL for immediate display
+          originalUrl: result.url,     // Google Apps Script URL for backup
+          // For backward compatibility, make it work as a string too
+          toString: () => editorUrl,
+          valueOf: () => editorUrl
+        };
       } catch (conversionError) {
         console.warn('Failed to convert to editor URL, returning proxy URL:', conversionError);
-        return result.url;
+        return {
+          editorUrl: result.url,
+          originalUrl: result.url,
+          toString: () => result.url,
+          valueOf: () => result.url
+        };
       }
 
     } catch (error) {
@@ -264,8 +281,14 @@ class GoogleDriveService {
     }
   }
 
-  // Convert proxy URL to blob URL for editor compatibility
+  // Convert proxy URL to blob URL for editor compatibility with caching
   async convertToEditorUrl(proxyUrl) {
+    // Check cache first
+    if (this.imageCache.has(proxyUrl)) {
+      console.log('Using cached blob URL for:', proxyUrl);
+      return this.imageCache.get(proxyUrl);
+    }
+
     try {
       const imageInfo = await this.getImageInfo(proxyUrl);
       if (!imageInfo || !imageInfo.dataUrl) {
@@ -278,7 +301,10 @@ class GoogleDriveService {
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       
-      console.log('Converted proxy URL to blob URL for editor compatibility');
+      // Cache the result for future use
+      this.imageCache.set(proxyUrl, blobUrl);
+      console.log('Converted and cached proxy URL to blob URL for editor compatibility');
+      
       return blobUrl;
 
     } catch (error) {
@@ -503,6 +529,88 @@ class GoogleDriveService {
       
     } catch (error) {
       console.error('Error during image cleanup:', error);
+      throw error;
+    }
+  }
+
+  // Clear the image cache (useful for memory management)
+  clearImageCache() {
+    console.log('Clearing image cache, had', this.imageCache.size, 'cached images');
+    // Revoke all blob URLs to free memory
+    for (const blobUrl of this.imageCache.values()) {
+      if (blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    }
+    this.imageCache.clear();
+  }
+
+  // Get cache statistics
+  getCacheStats() {
+    return {
+      size: this.imageCache.size,
+      urls: Array.from(this.imageCache.keys())
+    };
+  }
+
+  // Upload medical form to Google Drive
+  async uploadMedicalForm(file, fileName = null) {
+    try {
+      // Check if proxy is configured
+      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
+        throw new Error('Google Drive proxy not configured. Please set up your Google Apps Script first.');
+      }
+
+      console.log('Starting medical form upload:', fileName || file.name);
+
+      // Convert file to base64
+      const dataUrl = await this.fileToBase64(file);
+      
+      // Remove the data URL prefix to get just the base64 data
+      const base64Data = dataUrl.split(',')[1];
+      
+      const requestBody = {
+        fileName: fileName || file.name,
+        fileData: base64Data,
+        mimeType: file.type,
+        folderPath: 'Medical Form' // Upload to Medical Form folder
+      };
+
+      const response = await fetch(this.proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Medical form upload successful:', result);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      console.log('Medical form uploaded successfully to Google Drive');
+      console.dir(result.url);
+      
+      return result;
+
+    } catch (error) {
+      console.error('Error uploading medical form to Google Drive:', error);
+      console.error('Full error details:', {
+        message: error.message,
+        stack: error.stack,
+        fileName: fileName || file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
       throw error;
     }
   }

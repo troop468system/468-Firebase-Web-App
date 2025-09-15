@@ -1117,6 +1117,73 @@ const OutingPreview = ({
     }
   }, [isLiveView, eventId, onLoadOuting]);
 
+  // Fix broken blob URLs in preview (same as editor)
+  React.useEffect(() => {
+    const fixBrokenBlobImagesInPreview = async () => {
+      const previewImages = document.querySelectorAll('.preview-content-wrapper img');
+      
+      for (const img of previewImages) {
+        // Skip if already processed
+        if (img.dataset.processed) continue;
+        
+        const originalUrl = img.getAttribute('data-original-url');
+        
+        // Only process images that have an original URL backup
+        if (!originalUrl) continue;
+        
+        const handleBrokenPreviewImage = async () => {
+          console.log('Preview: Broken blob URL detected, converting to new blob URL:', img.src, '→', originalUrl);
+          
+          try {
+            // Import the googleDriveService dynamically to avoid circular imports
+            const { default: googleDriveService } = await import('../services/googleDriveService');
+            
+            // Use the same conversion method as the editor
+            const newBlobUrl = await googleDriveService.convertToEditorUrl(originalUrl);
+            console.log('Preview: Successfully converted to new blob URL:', newBlobUrl);
+            
+            img.src = newBlobUrl;
+            img.dataset.processed = 'true';
+            img.removeAttribute('data-original-url');
+          } catch (error) {
+            console.error('Preview: Failed to convert original URL to blob URL:', error);
+            img.dataset.processed = 'true';
+            img.removeAttribute('data-original-url');
+          }
+        };
+        
+        // Check if image is already broken (common after page refresh)
+        if (img.complete && img.naturalWidth === 0) {
+          await handleBrokenPreviewImage();
+        } else {
+          // Listen for future errors (blob URL expiration)
+          img.addEventListener('error', handleBrokenPreviewImage, { once: true });
+          
+          // Special handling for blob URLs - they often fail after refresh
+          if (img.src.startsWith('blob:')) {
+            // Give blob URL a chance, but if it fails after a short time, convert
+            setTimeout(async () => {
+              if (img.naturalWidth === 0 && !img.dataset.processed) {
+                console.log('Preview: Blob URL failed to load, converting...');
+                await handleBrokenPreviewImage();
+              }
+            }, 1000);
+          }
+        }
+      }
+    };
+
+    // Run after a delay to ensure content is rendered
+    const timer = setTimeout(fixBrokenBlobImagesInPreview, 500);
+    
+    // Also run when outingData changes
+    if (outingData) {
+      setTimeout(fixBrokenBlobImagesInPreview, 1000);
+    }
+    
+    return () => clearTimeout(timer);
+  }, [outingData]);
+
   // Initialize form data when user is authenticated
   React.useEffect(() => {
     if (user && isFlipped) {
