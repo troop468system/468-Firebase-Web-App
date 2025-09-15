@@ -18,7 +18,6 @@ import {
   Radio,
   FormControl,
   FormLabel,
-  Divider,
   IconButton,
   Container
 } from '@mui/material';
@@ -41,7 +40,6 @@ import {
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import authService from '../services/authService';
 import LoginForm from './LoginForm';
 
 // Weather code mapping for Open-Meteo API
@@ -491,15 +489,7 @@ const WeatherForecast = ({ startDate, endDate, location }) => {
     fetchWeatherData();
   }, [startDate, endDate, location]);
 
-  const getWeatherIcon = (condition) => {
-    switch (condition) {
-      case 'sunny': return '☀️';
-      case 'partly-cloudy': return '⛅';
-      case 'cloudy': return '☁️';
-      case 'rainy': return '🌧️';
-      default: return '☀️';
-    }
-  };
+  // Removed unused getWeatherIcon helper
 
   const getTemperatureColor = (temp) => {
     if (temp > 90) {
@@ -1069,7 +1059,7 @@ const OutingPreview = ({
   // Authentication state
   const auth = getAuth();
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  // Removed unused authLoading state
   
   // Sign-up form state
   const [isFlipped, setIsFlipped] = useState(false);
@@ -1087,7 +1077,6 @@ const OutingPreview = ({
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setAuthLoading(false);
     });
 
     return () => unsubscribe();

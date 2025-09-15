@@ -273,64 +273,6 @@ div, p, span, h1, h2, h3, h4, h5, h6 {
   100% { transform: rotate(360deg); }
 }
 
-/* Global fix for Material-UI TextField input height consistency */
-/* Standard TextField inputs - ensure proper height and padding */
-.MuiTextField-root .MuiOutlinedInput-root {
-  min-height: 56px;
-}
-
-.MuiTextField-root .MuiOutlinedInput-input {
-  padding: 16.5px 14px !important;
-  height: auto !important;
-}
-
-/* Small size TextField inputs - ensure proper height and padding */
-.MuiTextField-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall {
-  min-height: 40px;
-}
-
-.MuiTextField-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall .MuiOutlinedInput-input {
-  padding: 8.5px 14px !important;
-  height: auto !important;
-}
-
-/* DatePicker and Autocomplete inputs - ensure consistent height */
-.MuiAutocomplete-root .MuiOutlinedInput-root {
-  min-height: 56px;
-}
-
-.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall {
-  min-height: 40px;
-}
-
-.MuiAutocomplete-root .MuiOutlinedInput-input {
-  padding: 16.5px 14px !important;
-  height: auto !important;
-}
-
-.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall .MuiOutlinedInput-input {
-  padding: 8.5px 14px !important;
-  height: auto !important;
-}
-
-/* Fix for input adornments (like calendar icons) */
-.MuiInputAdornment-root {
-  height: auto !important;
-}
-
-/* Ensure labels are properly positioned */
-.MuiInputLabel-outlined {
-  transform: translate(14px, 16px) scale(1) !important;
-}
-
-.MuiInputLabel-outlined.MuiInputLabel-sizeSmall {
-  transform: translate(14px, 10px) scale(1) !important;
-}
-
-.MuiInputLabel-outlined.MuiInputLabel-shrink {
-  transform: translate(14px, -6px) scale(0.75) !important;
-}
-
 .preview-content-wrapper * {
   max-width: 100% !important;
   word-wrap: break-word !important;
@@ -362,4 +304,25 @@ div, p, span, h1, h2, h3, h4, h5, h6 {
   overflow: hidden !important;
   background: transparent !important;
   background-color: transparent !important;
+}
+
+/* Global fix: ensure MUI text inputs have adequate height and centered placeholder */
+.MuiOutlinedInput-root {
+  min-height: 48px;
+}
+
+.MuiOutlinedInput-root.MuiInputBase-sizeSmall {
+  min-height: 40px;
+}
+
+.MuiOutlinedInput-root .MuiInputBase-input {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  line-height: 1.5;
+}
+
+.MuiOutlinedInput-root.MuiInputBase-sizeSmall .MuiInputBase-input {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  line-height: 1.5;
 }

@@ -426,8 +426,8 @@ class GoogleDriveService {
     return [...new Set(allImages)]; // Remove duplicates
   }
 
-  // Extract file ID from various URL formats
-  extractFileIdFromUrl(url) {
+  // Extract file ID from various URL formats (duplicate removed)
+  extractFileIdFromUrlLegacy(url) {
     if (!url) return null;
     
     // Handle Google Apps Script proxy URLs
@@ -551,68 +551,6 @@ class GoogleDriveService {
       size: this.imageCache.size,
       urls: Array.from(this.imageCache.keys())
     };
-  }
-
-  // Upload medical form to Google Drive
-  async uploadMedicalForm(file, fileName = null) {
-    try {
-      // Check if proxy is configured
-      if (!this.proxyUrl || this.proxyUrl === 'https://script.google.com/macros/s/AKfycby.../exec') {
-        throw new Error('Google Drive proxy not configured. Please set up your Google Apps Script first.');
-      }
-
-      console.log('Starting medical form upload:', fileName || file.name);
-
-      // Convert file to base64
-      const dataUrl = await this.fileToBase64(file);
-      
-      // Remove the data URL prefix to get just the base64 data
-      const base64Data = dataUrl.split(',')[1];
-      
-      const requestBody = {
-        fileName: fileName || file.name,
-        fileData: base64Data,
-        mimeType: file.type,
-        folderPath: 'Medical Form' // Upload to Medical Form folder
-      };
-
-      const response = await fetch(this.proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Upload failed:', response.status, errorText);
-        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('Medical form upload successful:', result);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
-      }
-
-      console.log('Medical form uploaded successfully to Google Drive');
-      console.dir(result.url);
-      
-      return result;
-
-    } catch (error) {
-      console.error('Error uploading medical form to Google Drive:', error);
-      console.error('Full error details:', {
-        message: error.message,
-        stack: error.stack,
-        fileName: fileName || file.name,
-        fileSize: file.size,
-        fileType: file.type
-      });
-      throw error;
-    }
   }
 }
 

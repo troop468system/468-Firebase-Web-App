@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+// import { useParams } from 'react-router-dom';
 import TiptapEditor from '../components/TiptapEditor';
 import OutingPreview from '../components/OutingPreview';
 import {
@@ -100,8 +100,8 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+// import jsPDF from 'jspdf';
+// import html2canvas from 'html2canvas';
 import PageTitle from '../components/PageTitle';
 import outingService from '../services/outingService';
 import authService from '../services/authService';

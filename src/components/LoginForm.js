@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Paper,
   Typography,
@@ -26,6 +27,7 @@ const LoginForm = ({
   defaultTab = 0, // 0 = Sign In, 1 = New Member
   inFlippedContainer = false // Fix for tab indicator in CSS transformed containers
 }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -146,40 +148,7 @@ const LoginForm = ({
     }
   };
 
-  // Handle registration
-  const handleRegistration = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    
-    try {
-      const result = await authService.signUpWithEmail(formData.email, formData.password);
-      console.log('✅ Registration successful:', result);
-      if (onSuccess) {
-        onSuccess(result);
-      }
-    } catch (e) {
-      console.error('❌ Registration error:', e);
-      
-      let errorMessage = 'Failed to create account';
-      if (e.code === 'auth/email-already-in-use') {
-        errorMessage = 'An account with this email already exists.';
-      } else if (e.code === 'auth/weak-password') {
-        errorMessage = 'Password should be at least 6 characters.';
-      } else if (e.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
-      } else if (e.message) {
-        errorMessage = e.message;
-      }
-      
-      setError(errorMessage);
-      if (onError) {
-        onError(e);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Registration is handled on a dedicated page now
 
   // Handle password reset
   const handlePasswordReset = async (e) => {
@@ -515,48 +484,27 @@ const LoginForm = ({
                 </Alert>
               )}
 
-              <Box component="form" onSubmit={handleRegistration}>
-                <TextField
-                  fullWidth
-                  label="Email Address"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                  disabled={loading}
-                />
-                
-                <TextField
-                  fullWidth
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  helperText="Password should be at least 6 characters"
-                  sx={{ mb: 3 }}
-                  disabled={loading}
-                />
+              <Typography variant="h6" sx={{ mb: 2, textAlign: 'center', color: '#34495e' }}>
+                New to Troop 468?
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
+                Use our registration page to request an account.
+              </Typography>
 
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  disabled={loading}
-                  sx={{ 
-                    py: 1.5,
-                    bgcolor: '#4caf50',
-                    '&:hover': {
-                      bgcolor: '#45a049'
-                    }
-                  }}
-                >
-                  {loading ? <CircularProgress size={24} /> : 'Create Account'}
-                </Button>
-              </Box>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => navigate('/register')}
+                sx={{ 
+                  py: 1.5,
+                  bgcolor: '#4caf50',
+                  '&:hover': {
+                    bgcolor: '#45a049'
+                  }
+                }}
+              >
+                Go to Registration
+              </Button>
             </>
           )}
         </>

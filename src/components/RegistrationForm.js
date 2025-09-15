@@ -29,6 +29,8 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
     scoutPreferredName: '',
     scoutEmail: '',
     scoutPhone: '',
+    scoutAllergies: '',
+    scoutMedicalAttention: '',
     
     // Father Information
     fatherFirstName: '',
@@ -108,17 +110,19 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
     const requiredFields = [
       'scoutFirstName',
       'scoutLastName', 
-      'scoutEmail'
+      'scoutEmail',
+      'scoutDOB',
+      'address'
     ];
 
     // Add father fields if father section is enabled
     if (includeFather) {
-      requiredFields.push('fatherFirstName', 'fatherLastName', 'fatherEmail');
+      requiredFields.push('fatherFirstName', 'fatherLastName', 'fatherEmail', 'fatherPhone');
     }
 
     // Add mother fields if mother section is enabled
     if (includeMother) {
-      requiredFields.push('motherFirstName', 'motherLastName', 'motherEmail');
+      requiredFields.push('motherFirstName', 'motherLastName', 'motherEmail', 'motherPhone');
     }
 
     for (const field of requiredFields) {
@@ -342,21 +346,23 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="First Name *"
+                  label="First Name"
                   name="scoutFirstName"
                   value={formData.scoutFirstName}
                   onChange={handleChange}
                   disabled={loading}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Last Name *"
+                  label="Last Name"
                   name="scoutLastName"
                   value={formData.scoutLastName}
                   onChange={handleChange}
                   disabled={loading}
+                  required
                 />
               </Grid>
               
@@ -377,12 +383,13 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Email Address *"
+                  label="Email Address"
                   name="scoutEmail"
                   type="email"
                   value={formData.scoutEmail}
                   onChange={handleChange}
                   disabled={loading}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -418,7 +425,39 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
                   onChange={handleChange}
                   disabled={loading}
                   InputLabelProps={{ shrink: true }}
+                  required
                 />
+              </Grid>
+
+              {/* Allergies and Special Medical Attention */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Allergies"
+                  name="scoutAllergies"
+                  value={formData.scoutAllergies}
+                  onChange={handleChange}
+                  disabled={loading}
+                  multiline
+                  rows={2}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Special Medical Attention"
+                  name="scoutMedicalAttention"
+                  value={formData.scoutMedicalAttention}
+                  onChange={handleChange}
+                  disabled={loading}
+                  multiline
+                  rows={2}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  Medical details entered here (allergies and special medical attention) are visible only to the adult in charge of each outing. They are used solely to protect the scout and prevent medical issues during events.
+                </Typography>
               </Grid>
             </Grid>
           </CardContent>
@@ -456,21 +495,23 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="First Name *"
+                    label="First Name"
                     name="fatherFirstName"
                     value={formData.fatherFirstName}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Last Name *"
+                    label="Last Name"
                     name="fatherLastName"
                     value={formData.fatherLastName}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </Grid>
                 
@@ -491,12 +532,13 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Email Address *"
+                    label="Email Address"
                     name="fatherEmail"
                     type="email"
                     value={formData.fatherEmail}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -507,7 +549,7 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
                     value={formData.fatherPhone}
                     onChange={handleChange}
                     disabled={loading}
-                    helperText="Optional"
+                    required
                   />
                 </Grid>
               </Grid>
@@ -552,21 +594,23 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="First Name *"
+                    label="First Name"
                     name="motherFirstName"
                     value={formData.motherFirstName}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Last Name *"
+                    label="Last Name"
                     name="motherLastName"
                     value={formData.motherLastName}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </Grid>
                 
@@ -587,12 +631,13 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Email Address *"
+                    label="Email Address"
                     name="motherEmail"
                     type="email"
                     value={formData.motherEmail}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -603,7 +648,7 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
                     value={formData.motherPhone}
                     onChange={handleChange}
                     disabled={loading}
-                    helperText="Optional"
+                    required
                   />
                 </Grid>
               </Grid>
@@ -634,7 +679,11 @@ const RegistrationForm = ({ onSuccess, isAdminMode = false, onClose = null }) =>
               value={formData.address}
               onChange={handleChange}
               disabled={loading}
+              required
             />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              Allergies and medical information are shared only with the adult in charge of each event to protect the scout and prevent medical issues.
+            </Typography>
           </CardContent>
         </Card>
 

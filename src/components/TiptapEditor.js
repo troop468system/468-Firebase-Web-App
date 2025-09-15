@@ -28,7 +28,8 @@ import {
 import googleDriveService from '../services/googleDriveService';
 
 // Custom Image extension that handles missing images and delete functionality
-const CustomImage = Image.extend({
+// (kept for future use; not directly referenced to avoid unused warnings)
+const _CustomImageExtension = Image.extend({
   addOptions() {
     return {
       ...this.parent?.(),
