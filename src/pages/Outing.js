@@ -2978,7 +2978,7 @@ const Outing = () => {
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Select Scouts in Charge (SICs)"
+                        label="SICs"
                         placeholder={loadingUsers ? "Loading scouts..." : "Type to search scouts..."}
                         required
                         variant="outlined"
