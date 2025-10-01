@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-// import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import TiptapEditor from '../components/TiptapEditor';
 import OutingPreview from '../components/OutingPreview';
 import {
@@ -38,6 +38,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Switch,
+  FormControlLabel,
   Tooltip,
   CircularProgress,
   Table,
@@ -74,6 +75,8 @@ import {
   FilterList as FilterIcon,
   DragHandle as DragHandleIcon,
   Assignment as AssignmentIcon,
+  PersonAdd as PersonAddIcon,
+  PhotoLibrary as PhotoLibraryIcon,
   Description as DescriptionIcon,
   Backpack as BackpackIcon,
   DirectionsCar as DirectionsCarIcon,
@@ -187,8 +190,8 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
         }
       }}
     >
-      <CardContent sx={{ p: 2 }}>
-        <Grid container spacing={1} alignItems="center" sx={{ minHeight: '56px' }}>
+      <CardContent sx={{ padding: '25px 10px 15px !important' }}>
+        <Grid container spacing={1} alignItems="flex-start" sx={{ minHeight: '56px !important' }}>
           <Grid item xs="auto">
             <IconButton 
               {...attributes} 
@@ -208,6 +211,28 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
               }}
               freeSolo
               isOptionEqualToValue={(option, value) => option === value}
+              componentsProps={{
+                popper: {
+                  sx: {
+                    '& .MuiAutocomplete-listbox': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      '& .MuiAutocomplete-option': {
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: 'rgba(76, 175, 80, 0.3)'
+                        },
+                        '&[aria-selected="true"]': {
+                          backgroundColor: 'rgba(76, 175, 80, 0.5)'
+                        }
+                      }
+                    },
+                    '& .MuiPaper-root': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      backdropFilter: 'blur(10px)'
+                    }
+                  }
+                }
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -217,10 +242,39 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
                   size="small"
                   sx={{ 
                     borderRadius: 2,
-                    '& .MuiInputBase-input': { fontSize: '0.875rem' },
+                    '& .MuiInputBase-input': { 
+                      fontSize: '0.875rem',
+                      color: 'rgba(0, 0, 0, 0.87)'
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#4caf50 !important',
+                      fontWeight: '600 !important',
+                      fontSize: '0.9rem !important',
+                      '&.Mui-focused': {
+                        color: '#2e7d32 !important',
+                        fontWeight: '700 !important'
+                      }
+                    },
                     '& .MuiOutlinedInput-root': {
                       minHeight: '40px',
-                      height: '40px'
+                      height: '40px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.95) !important',
+                      '& fieldset': {
+                        borderColor: '#4caf50 !important',
+                        borderWidth: '2px !important'
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#2e7d32 !important',
+                        borderWidth: '2px !important'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1b5e20 !important',
+                        borderWidth: '3px !important'
+                      }
+                    },
+                    '& .MuiOutlinedInput-input::placeholder': {
+                      color: 'rgba(0, 0, 0, 0.6)',
+                      opacity: 1
                     }
                   }}
                 />
@@ -235,13 +289,43 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
               value={activity.activity}
               onChange={(e) => onUpdate({ ...activity, activity: e.target.value })}
               variant="outlined"
+              required
               size="small"
               sx={{ 
                 borderRadius: 2,
-                '& .MuiInputBase-input': { fontSize: '0.875rem' },
+                '& .MuiInputBase-input': { 
+                  fontSize: '0.875rem',
+                  color: 'rgba(0, 0, 0, 0.87)'
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#4caf50 !important',
+                  fontWeight: '600 !important',
+                  fontSize: '0.9rem !important',
+                  '&.Mui-focused': {
+                    color: '#2e7d32 !important',
+                    fontWeight: '700 !important'
+                  }
+                },
+                '& .MuiOutlinedInput-input::placeholder': {
+                  color: 'rgba(0, 0, 0, 0.6)',
+                  opacity: 1
+                },
                 '& .MuiOutlinedInput-root': {
                   minHeight: '40px',
-                  height: '40px'
+                  height: '40px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95) !important',
+                  '& fieldset': {
+                    borderColor: '#4caf50 !important',
+                    borderWidth: '2px !important'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#2e7d32 !important',
+                    borderWidth: '2px !important'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1b5e20 !important',
+                    borderWidth: '3px !important'
+                  }
                 }
               }}
             />
@@ -257,81 +341,210 @@ const SortableActivityItem = ({ activity, onUpdate, onDelete, scouts }) => {
               size="small"
               sx={{ 
                 borderRadius: 2,
-                '& .MuiInputBase-input': { fontSize: '0.875rem' },
+                '& .MuiInputBase-input': { 
+                  fontSize: '0.875rem',
+                  color: 'rgba(0, 0, 0, 0.87)'
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#4caf50 !important',
+                  fontWeight: '600 !important',
+                  fontSize: '0.9rem !important',
+                  '&.Mui-focused': {
+                    color: '#2e7d32 !important',
+                    fontWeight: '700 !important'
+                  }
+                },
+                '& .MuiOutlinedInput-input::placeholder': {
+                  color: 'rgba(0, 0, 0, 0.6)',
+                  opacity: 1
+                },
                 '& .MuiOutlinedInput-root': {
                   minHeight: '40px',
-                  height: '40px'
+                  height: '40px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95) !important',
+                  '& fieldset': {
+                    borderColor: '#4caf50 !important',
+                    borderWidth: '2px !important'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#2e7d32 !important',
+                    borderWidth: '2px !important'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1b5e20 !important',
+                    borderWidth: '3px !important'
+                  }
                 }
               }}
             />
           </Grid>
           <Grid item xs={2.5} sm={3}>
-            <Autocomplete
-              multiple
-              options={scouts || []}
-              value={selectedLeads}
-              onChange={(event, newValue) => {
-                // Store as array for consistency with SICs/AICs
-                onUpdate({ ...activity, lead: newValue });
-              }}
-              getOptionLabel={(option) => option?.name || ''}
-              isOptionEqualToValue={(option, value) => 
-                option.name === value.name && option.role === value.role
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Lead"
-                  placeholder="Who?"
-                  variant="outlined"
-                  size="small"
-                  sx={{ 
-                    borderRadius: 2,
-                    '& .MuiInputBase-input': { fontSize: '0.875rem' },
-                    '& .MuiOutlinedInput-root': {
-                      minHeight: '40px',
-                      height: '40px'
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Autocomplete
+                multiple
+                options={scouts || []}
+                value={selectedLeads}
+                onChange={(event, newValue) => {
+                  // Store as array for consistency with SICs/AICs
+                  onUpdate({ ...activity, lead: newValue });
+                }}
+                getOptionLabel={(option) => option?.name || ''}
+                isOptionEqualToValue={(option, value) => 
+                  option.name === value.name && option.role === value.role
+                }
+                componentsProps={{
+                  popper: {
+                    sx: {
+                      '& .MuiAutocomplete-listbox': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        '& .MuiAutocomplete-option': {
+                          color: 'white',
+                          backgroundColor: 'transparent !important',
+                          '&:hover': {
+                            backgroundColor: 'rgba(76, 175, 80, 0.1) !important'
+                          },
+                          '&[aria-selected="true"]': {
+                            backgroundColor: 'transparent !important'
+                          },
+                          '&.Mui-focused': {
+                            backgroundColor: 'rgba(76, 175, 80, 0.1) !important'
+                          }
+                        }
+                      },
+                      '& .MuiPaper-root': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        backdropFilter: 'blur(10px)'
+                      }
                     }
-                  }}
-                  helperText=""
-                />
-              )}
-              renderOption={(props, option) => (
-                <Box component="li" {...props}>
-                  <Box>
-                    <Typography variant="body2" fontWeight="medium">
-                      {option.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {option.patrol || 'No Patrol'}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-              renderTags={(tagValue, getTagProps) =>
-                tagValue.map((option, index) => {
-                  const { key, ...chipProps } = getTagProps({ index });
-                  return (
-                  <Chip
-                      key={option.id || option.name}
-                    label={option.name}
-                      {...chipProps}
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Lead"
+                    placeholder={selectedLeads.length > 0 ? "" : "Who?"}
+                    variant="outlined"
                     size="small"
-                    sx={{
-                      backgroundColor: '#e3f2fd',
-                      color: '#1976d2',
-                        fontSize: '0.75rem',
-                        height: '24px',
-                      '& .MuiChip-deleteIcon': {
-                          color: '#1976d2',
-                          fontSize: '16px'
+                    sx={{ 
+                      borderRadius: 2,
+                      '& .MuiInputBase-input': { 
+                        fontSize: '0.875rem',
+                        color: 'rgba(0, 0, 0, 0.87)'
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: '#4caf50 !important',
+                        fontWeight: '600 !important',
+                        fontSize: '0.9rem !important',
+                        '&.Mui-focused': {
+                          color: '#2e7d32 !important',
+                          fontWeight: '700 !important'
+                        }
+                      },
+                      '& .MuiOutlinedInput-input::placeholder': {
+                        color: 'rgba(0, 0, 0, 0.6)',
+                        opacity: 1
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        color: 'rgba(0, 0, 0, 0.87)'
+                      },
+                      '& .MuiOutlinedInput-root': {
+                        minHeight: '40px',
+                        height: '40px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95) !important',
+                        '& fieldset': {
+                          borderColor: '#4caf50 !important',
+                          borderWidth: '2px !important'
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#2e7d32 !important',
+                          borderWidth: '2px !important'
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#1b5e20 !important',
+                          borderWidth: '3px !important'
+                        }
                       }
                     }}
+                    helperText=""
                   />
+                )}
+                renderOption={(props, option) => {
+                  const isSelected = selectedLeads.some(lead => lead.name === option.name);
+                  return (
+                    <Box component="li" {...props} sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      backgroundColor: 'transparent !important',
+                      '&:hover': {
+                        backgroundColor: 'rgba(76, 175, 80, 0.1) !important'
+                      }
+                    }}>
+                      <Box sx={{ 
+                        width: 20, 
+                        height: 20, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        color: isSelected ? '#4caf50' : 'transparent'
+                      }}>
+                        ✓
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium" sx={{ color: 'white' }}>
+                          {option.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                          {option.patrol || 'No Patrol'}
+                        </Typography>
+                      </Box>
+                    </Box>
                   );
-                })
-              }
-            />
+                }}
+                renderTags={() => null}
+              />
+              {/* Render chips outside the input field */}
+              {selectedLeads.length > 0 && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: 0.5, 
+                  alignItems: 'center',
+                  mt: 1
+                }}>
+                  {selectedLeads.map((option, index) => (
+                    <Chip
+                      key={option.id || option.name}
+                      label={option.name}
+                      onDelete={() => {
+                        const newLeads = selectedLeads.filter((_, i) => i !== index);
+                        onUpdate({ ...activity, lead: newLeads });
+                      }}
+                      size="small"
+                      sx={{
+                        backgroundColor: 'rgb(0 93 19 / 90%) !important',
+                        borderRadius: '5px',
+                        color: 'white',
+                        fontSize: '0.75rem',
+                        height: '24px',
+                        maxWidth: '120px',
+                        '& .MuiChip-label': {
+                          paddingX: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        },
+                        '& .MuiChip-deleteIcon': {
+                          color: 'white',
+                          fontSize: '14px',
+                          marginRight: '4px'
+                        }
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
           </Grid>
           <Grid item xs="auto">
             <IconButton
@@ -700,8 +913,10 @@ const WeatherForecast = ({ startDate, endDate, location }) => {
 const Outing = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Hide columns on screens smaller than 'md' (960px)
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [tabValue, setTabValue] = useState(0);
+  const [outingTypeTab, setOutingTypeTab] = useState(0); // 0 = Troop, 1 = Patrol
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(false);
   const [scheduleWarningDialog, setScheduleWarningDialog] = useState({
@@ -717,6 +932,7 @@ const Outing = () => {
   // Form state
   const [outingData, setOutingData] = useState({
     eventName: '',
+    type: 'troop', // 'troop' or 'patrol'
     startDateTime: null,
     endDateTime: null,
     startPoint: '',
@@ -735,7 +951,7 @@ const Outing = () => {
     notes: '',
     attachments: [],
     images: [], // Uploaded images
-    coverImage: 'forest', // Background image for hero section
+    coverImage: 'bluesky', // Background image for hero section
     isPublic: true // Visibility setting
   });
 
@@ -747,6 +963,7 @@ const Outing = () => {
   const [existingOutings, setExistingOutings] = useState([]);
   const [loadingOutings, setLoadingOutings] = useState(true);
   const [currentOutingId, setCurrentOutingId] = useState(null); // Track if editing existing outing
+  const [showEditor, setShowEditor] = useState(false); // Track if editor should be visible
   
   // Table state
   const [searchQuery, setSearchQuery] = useState('');
@@ -764,6 +981,7 @@ const Outing = () => {
   const [scouts, setScouts] = useState([]);
   const [adults, setAdults] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -777,11 +995,98 @@ const Outing = () => {
     })
   );
 
+  // Filter outings based on type and user permissions
+  const getFilteredOutings = () => {
+    if (!existingOutings) return [];
+    
+    const currentType = outingTypeTab === 0 ? 'troop' : 'patrol';
+    
+    const filtered = existingOutings.filter(outing => {
+      // Filter by type (default to 'troop' if not specified for backward compatibility)
+      const outingType = outing.type || 'troop';
+      if (outingType !== currentType) return false;
+      
+      // Show public outings to everyone
+      if (outing.isPublic) return true;
+      
+      // If currentUser is not loaded yet, show all public outings but no private ones
+      if (!currentUser) return false;
+      
+      // Show private outings only if user is associated (SIC or AIC)
+      const userEmail = currentUser.email;
+      const userName = currentUser.name;
+      
+      const isAssociated = 
+        (outing.sics && outing.sics.some(sic => {
+          // Handle both string and object formats
+          if (typeof sic === 'string') return sic === userName;
+          return sic.email === userEmail || sic.name === userName;
+        })) ||
+        (outing.aics && outing.aics.some(aic => {
+          // Handle both string and object formats
+          if (typeof aic === 'string') return aic === userName;
+          return aic.email === userEmail || aic.name === userName;
+        }));
+      
+      return isAssociated;
+    });
+    
+    // Debug logging
+    console.log(`Filtering for ${currentType} outings:`, {
+      totalOutings: existingOutings.length,
+      filteredCount: filtered.length,
+      currentUser: currentUser?.name,
+      filtered: filtered.map(o => ({ name: o.eventName, type: o.type, isPublic: o.isPublic }))
+    });
+    
+    return filtered;
+  };
+
   // Load outings and users from Firebase on component mount
   useEffect(() => {
     loadOutings();
     loadUsers();
+    loadCurrentUser();
   }, []);
+
+  // Handle URL packet parameter
+  useEffect(() => {
+    const packetId = searchParams.get('packet');
+    if (packetId === 'new') {
+      // Handle new outing case - don't try to load from existing outings
+      setShowEditor(true);
+    } else if (packetId && existingOutings.length > 0) {
+      const outing = existingOutings.find(o => o.id === packetId);
+      if (outing) {
+        loadOutingForEdit(outing);
+      } else {
+        // Packet ID not found, clear URL and hide editor
+        setSearchParams({});
+        setShowEditor(false);
+        setCurrentOutingId(null);
+      }
+    } else if (!packetId) {
+      // No packet specified, hide editor
+      setShowEditor(false);
+      setCurrentOutingId(null);
+    }
+  }, [searchParams, existingOutings]);
+
+  // Refresh filtered outings when tab changes
+  useEffect(() => {
+    // This will trigger a re-render when outingTypeTab changes
+    // The filteredOutings will be recalculated automatically
+  }, [outingTypeTab, existingOutings, currentUser]);
+  
+  // Load current user information
+  const loadCurrentUser = async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Error loading current user:', error);
+    }
+  };
 
   // Load users from database and filter by roles
   const loadUsers = async () => {
@@ -837,8 +1142,22 @@ const Outing = () => {
       setLoadingOutings(true);
       const outings = await outingService.getAllOutings();
       // Process the outings to convert Firestore timestamps to Date objects
-      const processedOutings = outings.map(outing => outingService.processOutingData(outing));
+      const processedOutings = outings.map(outing => {
+        const processed = outingService.processOutingData(outing);
+        // Add type field if missing (backward compatibility)
+        if (!processed.type) {
+          processed.type = 'troop'; // Default to troop for existing outings
+        }
+        return processed;
+      });
       setExistingOutings(processedOutings);
+      
+      // Log for debugging
+      console.log('Loaded outings with types:', processedOutings.map(o => ({ 
+        name: o.eventName, 
+        type: o.type, 
+        isPublic: o.isPublic 
+      })));
     } catch (error) {
       console.error('Error loading outings:', error);
       setSnackbar({
@@ -852,9 +1171,7 @@ const Outing = () => {
   };
 
   // Filter and search outings
-  const filteredOutings = existingOutings.filter(outing => {
-    // Show all outings (both public and private)
-    
+  const filteredOutings = getFilteredOutings().filter(outing => {
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -964,6 +1281,7 @@ const Outing = () => {
     
     const loadedData = {
       eventName: outing.eventName,
+      type: outing.type || 'troop', // Default to troop if not specified
       startDateTime: outing.startDateTime,
       endDateTime: outing.endDateTime,
       startPoint: outing.startPoint || '',
@@ -982,7 +1300,7 @@ const Outing = () => {
       notes: cleanHtmlContent(outing.notes) || '',
       attachments: outing.attachments || [],
       images: outing.images || [],
-      coverImage: outing.coverImage || 'forest', // Add coverImage field
+      coverImage: outing.coverImage || 'bluesky', // Add coverImage field
       isPublic: outing.isPublic
     };
     
@@ -996,6 +1314,9 @@ const Outing = () => {
     console.log(`Loaded outing with ${initialImages.length} images:`, initialImages);
     
     setTabValue(0); // Switch to edit tab
+    setShowEditor(true); // Show the editor section
+    // Set URL parameter for existing outing
+    setSearchParams({ packet: outing.id });
   };
 
   const createNewOuting = () => {
@@ -1004,6 +1325,7 @@ const Outing = () => {
     setInitialImageList([]); // Clear initial image list for new outing
     setOutingData({
       eventName: '',
+      type: outingTypeTab === 0 ? 'troop' : 'patrol', // Set type based on current tab
       startDateTime: null,
       endDateTime: null,
       startPoint: '',
@@ -1026,6 +1348,9 @@ const Outing = () => {
       isPublic: true
     });
     setTabValue(0); // Switch to edit tab
+    setShowEditor(true); // Show the editor section
+    // Set URL parameter for new outing
+    setSearchParams({ packet: 'new' });
   };
 
   // Simple HTML cleanup for Tiptap (much cleaner than ReactQuill)
@@ -1416,6 +1741,8 @@ const Outing = () => {
         // Create new outing
         const newOutingId = await outingService.createOuting(cleanedOutingData);
         setCurrentOutingId(newOutingId);
+        // Update URL parameter with the new outing ID
+        setSearchParams({ packet: newOutingId });
         setSnackbar({
           open: true,
           message: 'Outing plan saved successfully!',
@@ -1433,7 +1760,7 @@ const Outing = () => {
       await loadOutings();
       
       // Switch to preview tab
-      setTabValue(1);
+      setTabValue(5);
     } catch (error) {
       console.error('Error saving outing:', error);
       setSnackbar({
@@ -1581,13 +1908,62 @@ const Outing = () => {
           icon={ScheduleIcon}
         />
 
+        {/* Outing Type Tabs */}
+        <Box sx={{ mb: 3 }}>
+          <Tabs 
+            value={outingTypeTab} 
+            onChange={(event, newValue) => setOutingTypeTab(newValue)}
+            sx={{
+              '& .MuiTab-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&.Mui-selected': {
+                  color: '#4caf50'
+                }
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#4caf50'
+              }
+            }}
+          >
+            <Tab label="Troop Outings" />
+            <Tab label="Patrol Outings" />
+          </Tabs>
+        </Box>
+
         {/* Outing Packets Table */}
         <Accordion 
           expanded={outingListExpanded} 
-          onChange={() => setOutingListExpanded(!outingListExpanded)}
+          onChange={null}
           sx={{ mt: 3, mb: 2 }}
         >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <AccordionSummary 
+            expandIcon={
+              <ExpandMoreIcon 
+                sx={{ 
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  cursor: 'pointer'
+                }} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOutingListExpanded(!outingListExpanded);
+                }}
+              />
+            }
+            sx={{
+              cursor: 'default',
+              '& .MuiAccordionSummary-content': {
+                cursor: 'default'
+              },
+              '& .MuiAccordionSummary-expandIconWrapper': {
+                color: 'rgba(255, 255, 255, 0.9)',
+                cursor: 'pointer'
+              },
+              '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
+                color: 'rgba(255, 255, 255, 0.9)',
+              }
+            }}
+            onClick={(e) => e.preventDefault()}
+          >
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -1605,13 +1981,20 @@ const Outing = () => {
                 placeholder="Search outings..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                size={isMobile ? "small" : "small"}
+                size="small"
                 sx={{ 
                   flexGrow: 1, 
                   minWidth: isMobile ? 150 : 200,
                   maxWidth: isMobile ? 200 : 'none',
                   '& .MuiOutlinedInput-root': {
-                    minHeight: isMobile ? '48px' : '64px'
+                    height: '48px'
+                  },
+                  '& .MuiOutlinedInput-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    opacity: 1
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: 'rgba(255, 255, 255, 0.9)'
                   },
                   '& .MuiOutlinedInput-input': {
                     padding: isMobile ? '12px 14px' : '20px 14px'
@@ -1648,6 +2031,41 @@ const Outing = () => {
                   value={startDateFilter}
                   onChange={(value) => setStartDateFilter(value)}
                   views={['year', 'month', 'day']}
+                  componentsProps={{
+                    popper: {
+                      sx: {
+                        '& .MuiPaper-root': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                          backdropFilter: 'blur(20px)',
+                          border: '1px solid rgba(76, 175, 80, 0.5)',
+                          color: 'white'
+                        },
+                        '& .MuiPickersCalendarHeader-root': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                          color: 'white'
+                        },
+                        '& .MuiPickersCalendarHeader-label': {
+                          color: 'white'
+                        },
+                        '& .MuiPickersArrowSwitcher-button': {
+                          color: 'white'
+                        },
+                        '& .MuiDayCalendar-weekDayLabel': {
+                          color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        '& .MuiPickersDay-root': {
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: 'rgba(76, 175, 80, 0.3)'
+                          },
+                          '&.Mui-selected': {
+                            backgroundColor: '#4caf50',
+                            color: 'white'
+                          }
+                        }
+                      }
+                    }
+                  }}
                   renderInput={(params) => (
                     <TextField 
                       {...params} 
@@ -1706,6 +2124,41 @@ const Outing = () => {
                   value={endDateFilter}
                   onChange={(value) => setEndDateFilter(value)}
                   views={['year', 'month', 'day']}
+                  componentsProps={{
+                    popper: {
+                      sx: {
+                        '& .MuiPaper-root': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                          backdropFilter: 'blur(20px)',
+                          border: '1px solid rgba(76, 175, 80, 0.5)',
+                          color: 'white'
+                        },
+                        '& .MuiPickersCalendarHeader-root': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                          color: 'white'
+                        },
+                        '& .MuiPickersCalendarHeader-label': {
+                          color: 'white'
+                        },
+                        '& .MuiPickersArrowSwitcher-button': {
+                          color: 'white'
+                        },
+                        '& .MuiDayCalendar-weekDayLabel': {
+                          color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        '& .MuiPickersDay-root': {
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: 'rgba(76, 175, 80, 0.3)'
+                          },
+                          '&.Mui-selected': {
+                            backgroundColor: '#4caf50',
+                            color: 'white'
+                          }
+                        }
+                      }
+                    }
+                  }}
                   renderInput={(params) => (
                     <TextField 
                       {...params} 
@@ -1768,9 +2221,9 @@ const Outing = () => {
                 }}
                 sx={{ 
                   minWidth: 'fit-content',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  padding: isMobile ? '6px 12px' : '6px 16px',
-                  height: isMobile ? '48px' : '64px'
+                  fontSize: '0.875rem',
+                  padding: '6px 16px',
+                  height: '48px'
                 }}
               >
                 New Outing
@@ -1857,10 +2310,16 @@ const Outing = () => {
                           sx={{ 
                             cursor: 'pointer',
                             '&.Mui-selected': {
-                              backgroundColor: '#e3f2fd',
+                              backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                              border: '2px solid #4caf50',
+                              boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)',
                               '&:hover': {
-                                backgroundColor: '#bbdefb'
+                                backgroundColor: 'rgba(76, 175, 80, 0.3)',
+                                boxShadow: '0 4px 12px rgba(76, 175, 80, 0.4)'
                               }
+                            },
+                            '&:hover': {
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)'
                             }
                           }}
                         >
@@ -1969,17 +2428,37 @@ const Outing = () => {
           </AccordionDetails>
         </Accordion>
 
-        {/* Editor Section - Only show when an outing is selected */}
-        {currentOutingId && (
-          <Paper sx={{ mt: 3 }}>
+        {/* Editor Section - Show when an outing is selected or when creating new */}
+        {showEditor && (
+          <Paper id="content-editor" sx={{ mt: 3 }}>
             <Tabs 
               value={tabValue} 
               onChange={handleTabChange}
               sx={{ borderBottom: 1, borderColor: 'divider' }}
             >
               <Tab 
-                icon={<EditIcon />} 
-                label="Edit" 
+                icon={<DescriptionIcon />} 
+                label="Packet" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<PersonAddIcon />} 
+                label="Signup" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<PeopleIcon />} 
+                label="Participation" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<PhotoLibraryIcon />} 
+                label="Photos" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<AssignmentIcon />} 
+                label="Reflection" 
                 iconPosition="start"
               />
               <Tab 
@@ -1991,7 +2470,7 @@ const Outing = () => {
 
           {/* Edit Tab */}
           <TabPanel value={tabValue} index={0}>
-            {/* Event Name Header - Only in Edit Tab */}
+            {/* Event Name Header with Toggle - Only in Edit Tab */}
             <Box sx={{ 
               py: 3, 
               textAlign: 'center'
@@ -1999,35 +2478,62 @@ const Outing = () => {
               <Typography variant="h1" sx={{ 
                 fontWeight: 600,
                 color: '#333',
-                fontSize: '3rem'
+                fontSize: '3rem',
+                mb: 2
               }}>
                 {outingData.eventName}
               </Typography>
-            </Box>
-            <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
-              {/* Header with Visibility Toggle */}
+              
+              {/* Public/Private Toggle under title */}
               <Box sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                justifyContent: 'space-between',
+                justifyContent: 'center',
+                mt: 2
+              }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={Boolean(outingData.isPublic)}
+                      onChange={(e) => {
+                        console.log('Switch clicked, changing from', outingData.isPublic, 'to', e.target.checked);
+                        handleInputChange('isPublic', e.target.checked);
+                      }}
+                      color="primary"
+                      sx={{
+                        '& .MuiSwitch-track': {
+                          backgroundColor: outingData.isPublic ? '#4caf50' : '#f44336',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#4caf50',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#4caf50',
+                        }
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {outingData.isPublic ? 'Public' : 'Private'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        {outingData.isPublic ? '(Visible to everyone)' : '(SICs & AICs only)'}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </Box>
+            </Box>
+            <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+              {/* Basic Information Header */}
+              <Box sx={{ 
                 pb: 4
               }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2' }}>
                   Basic Information
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {outingData.isPublic ? 'Public' : 'Private'}
-                  </Typography>
-                  <Switch
-                    checked={outingData.isPublic}
-                    onChange={(e) => handleInputChange('isPublic', e.target.checked)}
-                    color="primary"
-                  />
-                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
-                    {outingData.isPublic ? '(Visible to everyone)' : '(SICs & AICs only)'}
-                  </Typography>
-                </Box>
               </Box>
 
               {/* Form Fields */}
@@ -2045,6 +2551,13 @@ const Outing = () => {
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
                         minHeight: '56px',
+                      },
+                      '& .MuiOutlinedInput-input::placeholder': {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        opacity: 1
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        color: 'white',
                         height: '56px'
                       }
                     }}
@@ -2057,6 +2570,41 @@ const Outing = () => {
                     value={outingData.startDateTime}
                     onChange={(value) => handleDateChange('startDateTime', value)}
                     maxDate={outingData.endDateTime || undefined}
+                    componentsProps={{
+                      popper: {
+                        sx: {
+                          '& .MuiPaper-root': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(76, 175, 80, 0.5)',
+                            color: 'white'
+                          },
+                          '& .MuiPickersCalendarHeader-root': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            color: 'white'
+                          },
+                          '& .MuiPickersCalendarHeader-label': {
+                            color: 'white'
+                          },
+                          '& .MuiPickersArrowSwitcher-button': {
+                            color: 'white'
+                          },
+                          '& .MuiDayCalendar-weekDayLabel': {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                          },
+                          '& .MuiPickersDay-root': {
+                            color: 'white',
+                            '&:hover': {
+                              backgroundColor: 'rgba(76, 175, 80, 0.3)'
+                            },
+                            '&.Mui-selected': {
+                              backgroundColor: '#4caf50',
+                              color: 'white'
+                            }
+                          }
+                        }
+                      }
+                    }}
                     renderInput={(params) => (
                       <TextField 
                         {...params} 
@@ -2092,6 +2640,41 @@ const Outing = () => {
                     value={outingData.endDateTime}
                     onChange={(value) => handleDateChange('endDateTime', value)}
                     minDate={outingData.startDateTime || undefined}
+                    componentsProps={{
+                      popper: {
+                        sx: {
+                          '& .MuiPaper-root': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(76, 175, 80, 0.5)',
+                            color: 'white'
+                          },
+                          '& .MuiPickersCalendarHeader-root': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            color: 'white'
+                          },
+                          '& .MuiPickersCalendarHeader-label': {
+                            color: 'white'
+                          },
+                          '& .MuiPickersArrowSwitcher-button': {
+                            color: 'white'
+                          },
+                          '& .MuiDayCalendar-weekDayLabel': {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                          },
+                          '& .MuiPickersDay-root': {
+                            color: 'white',
+                            '&:hover': {
+                              backgroundColor: 'rgba(76, 175, 80, 0.3)'
+                            },
+                            '&.Mui-selected': {
+                              backgroundColor: '#4caf50',
+                              color: 'white'
+                            }
+                          }
+                        }
+                      }
+                    }}
                     renderInput={(params) => (
                       <TextField 
                         {...params} 
@@ -2134,6 +2717,13 @@ const Outing = () => {
                         borderRadius: 2,
                         minHeight: '56px',
                         height: '56px'
+                      },
+                      '& .MuiOutlinedInput-input::placeholder': {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        opacity: 1
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        color: 'white'
                       }
                     }}
                   />
@@ -2151,6 +2741,13 @@ const Outing = () => {
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
                         minHeight: '56px',
+                      },
+                      '& .MuiOutlinedInput-input::placeholder': {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        opacity: 1
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        color: 'white',
                         height: '56px'
                       }
                     }}
@@ -2171,6 +2768,13 @@ const Outing = () => {
                     placeholder="Paste Google Maps embed code here"
                     variant="outlined"
                     sx={{
+                      '& .MuiOutlinedInput-input::placeholder': {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        opacity: 1
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        color: 'white'
+                      },
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
                       }
@@ -2317,12 +2921,16 @@ const Outing = () => {
                   Scout In Charge
                 </Typography>
                 <Box sx={{ 
-                  p: 3,
-                  backgroundColor: '#f8f9fa',
+                  padding: '20px 10px 15px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(15px)',
+                  WebkitBackdropFilter: 'blur(15px)',
                   borderRadius: 2,
-                  border: '1px solid #e0e0e0'
+                  border: 'none',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
                 }}>
                   <Autocomplete
+                    id="sics-dropdown"
                     multiple
                     options={scouts}
                     getOptionLabel={(option) => `${option.name} (${option.rank})`}
@@ -2337,6 +2945,36 @@ const Outing = () => {
                       option.name === value.name && option.rank === value.role
                     }
                     loading={loadingUsers}
+                    sx={{ 
+                      '& .MuiInputBase-root': {
+                        paddingTop: '20px !important'
+                      },
+                    }}
+                    componentsProps={{
+                      popper: {
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            paddingTop: '20px'
+                          },
+                          '& .MuiAutocomplete-listbox': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            '& .MuiAutocomplete-option': {
+                              color: 'white',
+                              '&:hover': {
+                                backgroundColor: 'rgba(76, 175, 80, 0.3)'
+                              },
+                              '&[aria-selected="true"]': {
+                                backgroundColor: 'rgba(76, 175, 80, 0.5)'
+                              }
+                            }
+                          },
+                          '& .MuiPaper-root': {
+                            backgroundColor: 'rgba(103, 60, 60, 0.8)',
+                            backdropFilter: 'blur(10px)'
+                          }
+                        }
+                      }
+                    }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -2344,7 +2982,16 @@ const Outing = () => {
                         placeholder={loadingUsers ? "Loading scouts..." : "Type to search scouts..."}
                         required
                         variant="outlined"
-                        sx={{ borderRadius: 2 }}
+                        sx={{ 
+                          borderRadius: 2,
+                          '& .MuiOutlinedInput-input::placeholder': {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            opacity: 1
+                          },
+                          '& .MuiOutlinedInput-input': {
+                            color: 'white'
+                          }
+                        }}
                         helperText={scouts.length === 0 && !loadingUsers ? "No scouts found. Please ensure users are registered with 'scout' role." : ""}
                       />
                     )}
@@ -2356,37 +3003,42 @@ const Outing = () => {
                             key={option.id || option.name || index}
                           label={`${option.name} (${option.role})`}
                             {...chipProps}
-                          color="primary"
-                          variant="filled"
                           sx={{ 
                             height: 40,
-                              fontSize: '1.0rem',
+                            fontSize: '1.0rem',
+                            backgroundColor: 'rgb(0 93 19 / 90%) !important',
+                            borderRadius: '5px',
+                            color: 'white',
                             '& .MuiChip-deleteIcon': {
-                              fontSize: '1.1rem'
+                              fontSize: '1.1rem',
+                              color: 'white'
                             }
                           }}
                         />
                         );
                       })
                     }
-                    sx={{ mb: 2 }}
                   />
                 </Box>
               </Box>
 
               {/* Adult in Charge Section */}
-              <Box sx={{ mb: 4 }}>
+              <Box sx={{ mb: 4, paddingTop: '20px' }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
                   <PeopleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Adult In Charge
                 </Typography>
                 <Box sx={{ 
-                  p: 3,
-                  backgroundColor: '#f8f9fa',
+                  padding: '20px 10px 15px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(15px)',
+                  WebkitBackdropFilter: 'blur(15px)',
                   borderRadius: 2,
-                  border: '1px solid #e0e0e0'
+                  border: 'none',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
                 }}>
                   <Autocomplete
+                    id="aics-dropdown"
                     multiple
                     options={adults}
                     getOptionLabel={(option) => `${option.name} (${option.role})`}
@@ -2401,14 +3053,50 @@ const Outing = () => {
                       option.name === value.name && option.role === value.role
                     }
                     loading={loadingUsers}
+                    sx={{ 
+                      '& .MuiInputBase-root': {
+                        paddingTop: '20px !important'
+                      },
+                    }}
+                    componentsProps={{
+                      popper: {
+                        sx: {
+                          '& .MuiAutocomplete-listbox': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            '& .MuiAutocomplete-option': {
+                              color: 'white',
+                              '&:hover': {
+                                backgroundColor: 'rgba(76, 175, 80, 0.3)'
+                              },
+                              '&[aria-selected="true"]': {
+                                backgroundColor: 'rgba(76, 175, 80, 0.5)'
+                              }
+                            }
+                          },
+                          '& .MuiPaper-root': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backdropFilter: 'blur(10px)'
+                          }
+                        }
+                      }
+                    }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Select Adults in Charge (AICs)"
+                        label="AICs"
                         placeholder={loadingUsers ? "Loading adults..." : "Type to search adults/parents..."}
                         required
                         variant="outlined"
-                        sx={{ borderRadius: 2 }}
+                        sx={{ 
+                          borderRadius: 2,
+                          '& .MuiOutlinedInput-input::placeholder': {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            opacity: 1
+                          },
+                          '& .MuiOutlinedInput-input': {
+                            color: 'white'
+                          }
+                        }}
                         helperText={adults.length === 0 && !loadingUsers ? "No adults found. Please ensure users are registered with 'parent', 'leader', or 'admin' role." : ""}
                       />
                     )}
@@ -2420,20 +3108,21 @@ const Outing = () => {
                             key={option.id || option.name || index}
                           label={`${option.name} (${option.role})`}
                             {...chipProps}
-                          color="success"
-                          variant="filled"
                           sx={{ 
                             height: 40,
-                              fontSize: '1.0rem',
+                            fontSize: '1.0rem',
+                            backgroundColor: 'rgb(0 93 19 / 90%) !important',
+                            borderRadius: '5px',
+                            color: 'white',
                             '& .MuiChip-deleteIcon': {
-                              fontSize: '1.1rem'
+                              fontSize: '1.1rem',
+                              color: 'white'
                             }
                           }}
                         />
                         );
                       })
                     }
-                    sx={{ mb: 2 }}
                   />
                 </Box>
               </Box>
@@ -2482,7 +3171,7 @@ const Outing = () => {
 
               {/* Schedule Section */}
               <Box sx={{ mb: 4 }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2', mb: 3 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: 'white', mb: 3, textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>
                   <ScheduleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Schedule *
                 </Typography>
@@ -2493,24 +3182,28 @@ const Outing = () => {
                   onDragEnd={handleDragEnd}
                 >
                   <Box sx={{ 
-                    backgroundColor: '#f8f9fa', 
+                    background: 'rgba(255, 255, 255, 0.15)', 
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
                     borderRadius: 2, 
                     p: 3, 
-                    border: '1px solid #e0e0e0' 
+                    border: '1px solid rgba(76, 175, 80, 0.2)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)' 
                   }}>
                     {!outingData.scheduleDays || outingData.scheduleDays.length === 0 ? (
                       <Box sx={{ 
                         p: 4, 
                         textAlign: 'center', 
-                        color: 'text.secondary',
-                        backgroundColor: 'white',
+                        color: 'rgba(0, 0, 0, 0.7)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
                         borderRadius: 2,
-                        border: '2px dashed #e0e0e0'
+                        border: '2px dashed rgba(76, 175, 80, 0.4)',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)'
                       }}>
-                        <Typography variant="body1" sx={{ mb: 2 }}>
+                        <Typography variant="body1" sx={{ mb: 2, color: 'rgba(0, 0, 0, 0.8)', fontWeight: 500 }}>
                           📅 Schedule days will be automatically generated
                         </Typography>
-                        <Typography variant="body2">
+                        <Typography variant="body2" sx={{ color: 'rgba(0, 0, 0, 0.6)' }}>
                           Set both Start Date and End Date above to create day containers
                         </Typography>
                       </Box>
@@ -2519,9 +3212,12 @@ const Outing = () => {
                       const dayDate = generateDayDate(dayIndex);
                       return (
                         <Box key={day.id} sx={{ 
-                          backgroundColor: 'white',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          backdropFilter: 'blur(15px)',
+                          WebkitBackdropFilter: 'blur(15px)',
                           borderRadius: 3,
-                          border: '2px solid #d7e5f2',
+                          border: 'none',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                           overflow: 'hidden',
                           mb: 4
                         }}>
@@ -2531,8 +3227,11 @@ const Outing = () => {
                             alignItems: 'center',
                             px: 3,
                             py: '10px',
-                            backgroundColor: '#d7e5f2',
-                            color: '#2c3e50'
+                            background: 'linear-gradient(135deg, #4caf50, #45a049)',
+                            backdropFilter: 'blur(10px)',
+                            WebkitBackdropFilter: 'blur(10px)',
+                            color: 'white',
+                            boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)'
                           }}>
                             <Box>
                               <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
@@ -2552,13 +3251,15 @@ const Outing = () => {
                                 size="small"
                                 sx={{ 
                                   mr: 1,
-                                  backgroundColor: '#2c3e50',
+                                  backgroundColor: '#4caf50',
                                   color: 'white',
                                   borderRadius: '5px',
                                   textTransform: 'none',
                                   padding: '5px 10px',
+                                  boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)',
                                   '&:hover': {
-                                    backgroundColor: '#34495e'
+                                    backgroundColor: '#45a049',
+                                    boxShadow: '0 4px 12px rgba(76, 175, 80, 0.4)'
                                   }
                                 }}
                               >
@@ -2569,9 +3270,10 @@ const Outing = () => {
                                   onClick={() => deleteDay(day.id)}
                                   size="small"
                                   sx={{ 
-                                    color: '#2c3e50',
+                                    color: 'white',
                                     '&:hover': {
-                                      backgroundColor: 'rgba(44,62,80,0.1)'
+                                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                      color: 'white'
                                     }
                                   }}
                                 >
@@ -2601,12 +3303,19 @@ const Outing = () => {
                               <Box sx={{ 
                                 p: 4, 
                                 textAlign: 'center', 
-                                color: 'text.secondary',
-                                backgroundColor: '#f9f9f9',
+                                color: 'rgba(255, 255, 255, 0.95)',
+                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
                                 borderRadius: 2,
-                                border: '2px dashed #e0e0e0'
+                                border: '1px dashed rgba(255, 255, 255, 0.8)',
+                                mx: 2,
+                                mb: 2
                               }}>
-                                <Typography variant="body2">
+                                <Typography variant="body2" sx={{ 
+                                  color: 'rgba(255, 255, 255, 0.95) !important',
+                                  fontWeight: 600,
+                                  fontSize: '1.1rem',
+                                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)'
+                                }}>
                                   No activities yet. Click "Add Activity" to get started.
                                 </Typography>
                               </Box>
@@ -2848,12 +3557,16 @@ const Outing = () => {
               bottom: 0,
               left: 0,
               right: 0,
-              backgroundColor: 'white',
-              borderTop: '1px solid #e0e0e0',
-              boxShadow: '0 -10px 5px -5px rgba(0, 0, 0, 0.03)',
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              borderRadius: '15px 15px 0 0',
+              boxShadow: '0 0 15px 2px rgba(0, 0, 0, 0.3)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               p: 3,
               display: 'flex',
               justifyContent: 'center',
+              gap: 2,
               zIndex: 1000
             }}>
                 <Button
@@ -2884,11 +3597,114 @@ const Outing = () => {
                     : (currentOutingId ? 'Update Outing Plan' : 'Save Outing Plan')
                   }
                 </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<PreviewIcon />}
+                  onClick={() => {
+                    setTabValue(5);
+                    // Scroll to the content-editor section with header offset after a short delay
+                    setTimeout(() => {
+                      const contentEditor = document.getElementById('content-editor');
+                      if (contentEditor) {
+                        const headerOffset = 80; // Adjust this value based on your header height
+                        const elementPosition = contentEditor.offsetTop;
+                        const offsetPosition = elementPosition - headerOffset;
+                        
+                        window.scrollTo({
+                          top: offsetPosition,
+                          behavior: 'smooth'
+                        });
+                      } else {
+                        // Fallback to scroll to top if content-editor not found
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    }, 100);
+                  }}
+                  sx={{ 
+                    minWidth: 150,
+                    height: 48,
+                    borderRadius: 3,
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                >
+                  Preview
+                </Button>
+            </Box>
+          </TabPanel>
+
+          {/* Signup Tab */}
+          <TabPanel value={tabValue} index={1}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h5" gutterBottom>
+                Signup Configuration
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Configure the signup form settings and customize the registration experience.
+              </Typography>
+              {/* Add signup configuration content here in the future */}
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                Signup configuration features coming soon...
+              </Typography>
+            </Box>
+          </TabPanel>
+
+
+          {/* Participation Tab */}
+          <TabPanel value={tabValue} index={2}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h5" gutterBottom>
+                Participation Tracking
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Track attendance and participation for this outing.
+              </Typography>
+              {/* Add participation content here in the future */}
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                Participation tracking features coming soon...
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          {/* Photos Tab */}
+          <TabPanel value={tabValue} index={3}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h5" gutterBottom>
+                Photos Management
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Upload and manage photos for this outing.
+              </Typography>
+              {/* Add photos management content here in the future */}
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                Photo management features coming soon...
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          {/* Reflection Tab */}
+          <TabPanel value={tabValue} index={4}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h5" gutterBottom>
+                Outing Reflection
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Reflect on the outing experience, what went well, and areas for improvement.
+              </Typography>
+              {/* Add reflection content here in the future */}
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                Reflection features coming soon...
+              </Typography>
             </Box>
           </TabPanel>
 
           {/* Preview Tab */}
-          <TabPanel value={tabValue} index={1}>
+          <TabPanel value={tabValue} index={5} data-testid="preview-section">
             {/* Use the reusable OutingPreview component */}
             <OutingPreview 
               outingData={outingData}

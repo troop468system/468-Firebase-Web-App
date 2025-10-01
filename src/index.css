@@ -326,3 +326,592 @@ div, p, span, h1, h2, h3, h4, h5, h6 {
   padding-bottom: 8px;
   line-height: 1.5;
 }
+
+/* Glass morphism TextField styling for login forms */
+.glass-form .MuiOutlinedInput-root {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-form .MuiOutlinedInput-root:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-form .MuiOutlinedInput-root.Mui-focused {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.glass-form .MuiOutlinedInput-root fieldset {
+  border: none;
+}
+
+.glass-form .MuiOutlinedInput-input {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.glass-form .MuiInputLabel-root {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.glass-form .MuiInputLabel-root.Mui-focused {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Glass morphism Button styling */
+.glass-form .MuiButton-contained {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.glass-form .MuiButton-contained:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.glass-form .MuiButton-contained:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Glass form links styling */
+.glass-form .MuiLink-root {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.glass-form .MuiLink-root:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Traveling border light effect - like the reference example */
+.glass-form {
+  position: relative;
+  border-radius: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-form::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  z-index: -1;
+}
+
+/* Camera icon shimmer animation */
+@keyframes camera-shimmer {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(135, 206, 250, 0.3);
+  }
+}
+
+.camera-icon-container {
+  animation: camera-shimmer 3s ease-in-out infinite;
+}
+
+/* Global Glass Morphism Theme */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 16px !important;
+}
+
+.glass-paper {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Glass morphism for MUI Paper components */
+.MuiPaper-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Glass morphism for MUI Card components */
+.MuiCard-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Glass morphism for buttons */
+.MuiButton-contained {
+  background: rgba(76, 175, 80, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(76, 175, 80, 0.5) !important;
+  color: white !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+.MuiButton-contained:hover {
+  background: rgba(76, 175, 80, 0.4) !important;
+  border: 1px solid rgba(76, 175, 80, 0.6) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Glass morphism for text fields */
+.MuiOutlinedInput-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.MuiOutlinedInput-root:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: none !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: none !important;
+}
+
+.MuiOutlinedInput-root fieldset {
+  border: none !important;
+}
+
+.MuiInputLabel-root {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffffa1;
+  border-radius: 15px;
+  padding: 1px 10px;
+}
+
+.MuiInputLabel-root.Mui-focused {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffffa1;
+  border-radius: 15px;
+  padding: 1px 10px;
+}
+
+/* Typography colors for glass theme */
+.MuiTypography-root {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.MuiTypography-h1, .MuiTypography-h2, .MuiTypography-h3, 
+.MuiTypography-h4, .MuiTypography-h5, .MuiTypography-h6 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Override typography colors for preview sections to ensure readability */
+.overview-section .MuiTypography-root,
+.detail-section .MuiTypography-root,
+.schedule-section .MuiTypography-root,
+.packingList-section .MuiTypography-root,
+.parking-section .MuiTypography-root,
+.nearbyHospital-section .MuiTypography-root,
+.notes-section .MuiTypography-root,
+.contacts-section .MuiTypography-root,
+.references-section .MuiTypography-root,
+.weather-section .MuiTypography-root,
+.map-section .MuiTypography-root,
+.hero-section .MuiTypography-root {
+  color: #2c3e50 !important;
+}
+
+/* Override headings in preview sections */
+.overview-section .MuiTypography-h1,
+.overview-section .MuiTypography-h2,
+.overview-section .MuiTypography-h3,
+.overview-section .MuiTypography-h4,
+.overview-section .MuiTypography-h5,
+.overview-section .MuiTypography-h6,
+.detail-section .MuiTypography-h1,
+.detail-section .MuiTypography-h2,
+.detail-section .MuiTypography-h3,
+.detail-section .MuiTypography-h4,
+.detail-section .MuiTypography-h5,
+.detail-section .MuiTypography-h6,
+.schedule-section .MuiTypography-h1,
+.schedule-section .MuiTypography-h2,
+.schedule-section .MuiTypography-h3,
+.schedule-section .MuiTypography-h4,
+.schedule-section .MuiTypography-h5,
+.schedule-section .MuiTypography-h6,
+.packingList-section .MuiTypography-h1,
+.packingList-section .MuiTypography-h2,
+.packingList-section .MuiTypography-h3,
+.packingList-section .MuiTypography-h4,
+.packingList-section .MuiTypography-h5,
+.packingList-section .MuiTypography-h6,
+.parking-section .MuiTypography-h1,
+.parking-section .MuiTypography-h2,
+.parking-section .MuiTypography-h3,
+.parking-section .MuiTypography-h4,
+.parking-section .MuiTypography-h5,
+.parking-section .MuiTypography-h6,
+.nearbyHospital-section .MuiTypography-h1,
+.nearbyHospital-section .MuiTypography-h2,
+.nearbyHospital-section .MuiTypography-h3,
+.nearbyHospital-section .MuiTypography-h4,
+.nearbyHospital-section .MuiTypography-h5,
+.nearbyHospital-section .MuiTypography-h6,
+.notes-section .MuiTypography-h1,
+.notes-section .MuiTypography-h2,
+.notes-section .MuiTypography-h3,
+.notes-section .MuiTypography-h4,
+.notes-section .MuiTypography-h5,
+.notes-section .MuiTypography-h6,
+.contacts-section .MuiTypography-h1,
+.contacts-section .MuiTypography-h2,
+.contacts-section .MuiTypography-h3,
+.contacts-section .MuiTypography-h4,
+.contacts-section .MuiTypography-h5,
+.contacts-section .MuiTypography-h6,
+.references-section .MuiTypography-h1,
+.references-section .MuiTypography-h2,
+.references-section .MuiTypography-h3,
+.references-section .MuiTypography-h4,
+.references-section .MuiTypography-h5,
+.references-section .MuiTypography-h6,
+.weather-section .MuiTypography-h1,
+.weather-section .MuiTypography-h2,
+.weather-section .MuiTypography-h3,
+.weather-section .MuiTypography-h4,
+.weather-section .MuiTypography-h5,
+.weather-section .MuiTypography-h6,
+.map-section .MuiTypography-h1,
+.map-section .MuiTypography-h2,
+.map-section .MuiTypography-h3,
+.map-section .MuiTypography-h4,
+.map-section .MuiTypography-h5,
+.map-section .MuiTypography-h6 {
+  color: #2c3e50 !important;
+}
+
+/* Keep hero section text white (it has dark background) */
+.hero-section .MuiTypography-root {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Override typography colors for signup/registration form to ensure readability */
+.MuiCard-root .MuiTypography-root {
+  color: #4caf50 !important;
+}
+
+/* Specific override for Event Registration title */
+.signup-form-card .MuiTypography-h5 {
+  color: #4caf50 !important;
+}
+
+.MuiCard-root .MuiTypography-h5 {
+  color: #4caf50 !important;
+}
+
+.MuiCard-root .MuiFormLabel-root {
+  color: #4caf50 !important;
+}
+
+.MuiCard-root .MuiFormControlLabel-root .MuiTypography-root {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.MuiCard-root .MuiInputLabel-root {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.MuiCard-root .MuiOutlinedInput-input {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.MuiContainer-root .MuiTypography-root {
+  color: #2c3e50 !important;
+}
+
+/* Override for signup form within container */
+#signup-form .MuiCard-root .MuiTypography-h5 {
+  color: #4caf50 !important;
+}
+
+/* Force glass morphism card styling for signup form */
+.MuiCard-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Override for signup page header */
+.MuiContainer-root .MuiTypography-h3 {
+  color: #2e7d32 !important;
+}
+
+/* Override for signup page subtitle */
+.MuiContainer-root .MuiTypography-body1 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Make containers transparent in signup form */
+.MuiContainer-root {
+  background-color: transparent !important;
+}
+
+/* Apply dark background photo to signup form container */
+#signup-form {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
+              url('https://images.unsplash.com/photo-1592722182837-52273392552d') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* Force visibility for schedule input fields */
+.MuiGrid-container .MuiTextField-root .MuiOutlinedInput-root {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: none !important;
+}
+
+.MuiGrid-container .MuiTextField-root .MuiOutlinedInput-input {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.MuiGrid-container .MuiTextField-root .MuiInputLabel-root {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffffa1;
+  border-radius: 15px;
+  padding: 1px 10px;
+}
+
+.MuiGrid-container .MuiTextField-root .MuiOutlinedInput-root:hover {
+  border: none !important;
+}
+
+.MuiGrid-container .MuiTextField-root .MuiOutlinedInput-root.Mui-focused {
+  border: none !important;
+}
+
+/* Specific styling for schedule activity cards */
+.MuiCard-root .MuiGrid-container .MuiTextField-root .MuiOutlinedInput-root {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  border: none !important;
+}
+
+.MuiCard-root .MuiGrid-container .MuiTextField-root .MuiOutlinedInput-input {
+  color: rgb(19, 62, 27) !important;
+}
+
+.MuiCard-root .MuiGrid-container .MuiTextField-root .MuiOutlinedInput-input::placeholder {
+  color: rgba(19, 62, 27, 0.8) !important;
+}
+
+.MuiCard-root .MuiGrid-container .MuiTextField-root .MuiInputLabel-root {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffff54;
+  border-radius: 15px;
+  padding: 1px 10px;
+}
+
+/* Placeholder text styling for glass inputs */
+.MuiGrid-container .MuiTextField-root .MuiOutlinedInput-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Specific overrides for form controls in signup */
+.MuiCard-root .MuiFormControlLabel-root {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.MuiCard-root .MuiRadio-root {
+  color: #2e7d32 !important;
+}
+
+.MuiCard-root .MuiCheckbox-root {
+  color: #2e7d32 !important;
+}
+
+/* Override input field styles in signup form */
+.MuiCard-root .MuiOutlinedInput-root {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+}
+
+.MuiCard-root .MuiOutlinedInput-root:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(76, 175, 80, 0.5) !important;
+}
+
+.MuiCard-root .MuiOutlinedInput-root.Mui-focused {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid #2e7d32 !important;
+}
+
+/* Force override the global glass morphism styles for signup cards */
+.signup-form-card.MuiCard-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.MuiCard-root .MuiInputLabel-root {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffffa1;
+  border-radius: 15px;
+  padding: 1px 10px;
+}
+
+.MuiCard-root .MuiInputLabel-root.Mui-focused {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffffa1;
+  border-radius: 15px;
+  padding: 1px 10px;
+}
+
+/* Placeholder text styling for transparent inputs */
+.MuiCard-root .MuiOutlinedInput-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.MuiCard-root .MuiOutlinedInput-input::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.MuiCard-root .MuiOutlinedInput-input::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Date picker input label styling - more specific selectors */
+.MuiFormControl-root .MuiInputLabel-root {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffffa1 !important;
+  border-radius: 15px !important;
+  padding: 1px 10px !important;
+}
+
+.MuiFormControl-root .MuiInputLabel-root.Mui-focused {
+  color: #2a662c !important;
+  font-weight: 600 !important;
+  background-color: #ffffffa1 !important;
+  border-radius: 15px !important;
+  padding: 1px 10px !important;
+}
+
+/* Dividers */
+.MuiDivider-root {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Table styling for glass morphism */
+.MuiTableContainer-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 16px !important;
+}
+
+.MuiTableHead-root {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.MuiTableHead-root .MuiTableCell-root {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 600 !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root.Mui-selected {
+  background: rgba(76, 175, 80, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root.Mui-selected:hover {
+  background: rgba(76, 175, 80, 0.3) !important;
+}
+
+.MuiTableCell-root {
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Chip styling for better visibility */
+.MuiChip-root {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.MuiChip-colorSuccess {
+  background: rgba(76, 175, 80, 0.3) !important;
+  border: 1px solid rgba(76, 175, 80, 0.5) !important;
+  color: white !important;
+}
+
+.MuiChip-colorError {
+  background: rgba(244, 67, 54, 0.3) !important;
+  border: 1px solid rgba(244, 67, 54, 0.5) !important;
+  color: white !important;
+}

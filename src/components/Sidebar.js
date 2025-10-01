@@ -101,9 +101,11 @@ const Sidebar = () => {
         '& .MuiDrawer-paper': {
           width: isMobile ? drawerWidth : (collapsed ? collapsedDrawerWidth : drawerWidth),
           boxSizing: 'border-box',
-          borderRight: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: 'background.paper',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
           transition: 'width 0.3s ease',
           overflowX: 'hidden',
         },
@@ -118,11 +120,13 @@ const Sidebar = () => {
             onClick={() => setCollapsed(!collapsed)}
             size="small"
             sx={{ 
-              border: '1px solid',
-              borderColor: 'divider',
-              backgroundColor: 'background.paper',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(10px)',
+              color: 'rgba(255, 255, 255, 0.9)',
               '&:hover': {
-                backgroundColor: 'action.hover',
+                background: 'rgba(255, 255, 255, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.4)',
               }
             }}
           >
@@ -131,7 +135,25 @@ const Sidebar = () => {
         </Box>
       )}
 
-      <Box sx={{ overflow: 'auto', pt: 1 }}>
+      <Box sx={{ 
+        overflow: 'auto', 
+        pt: 1,
+        '&::-webkit-scrollbar': {
+          width: '6px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: 'rgba(255, 255, 255, 0.3)',
+          borderRadius: '3px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: 'rgba(255, 255, 255, 0.5)',
+        },
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
+      }}>
         {menuSections.map((section, sectionIndex) => (
           <Box key={section.title}>
             {sectionIndex > 0 && <Divider sx={{ my: 1 }} />}
@@ -143,7 +165,7 @@ const Sidebar = () => {
                   primary={section.title}
                   primaryTypographyProps={{
                     variant: 'caption',
-                    color: 'text.secondary',
+                    color: 'rgba(255, 255, 255, 0.7)',
                     fontWeight: 'bold',
                     textTransform: 'uppercase',
                     letterSpacing: 1,
@@ -165,35 +187,26 @@ const Sidebar = () => {
                             setCollapsed(true);
                           }
                         }}
-                        selected={isActive(item.path)}
                         sx={{
                           borderRadius: 1,
                           mx: 0.5,
-                          minHeight: 48,
+                          minHeight: 40,
                           justifyContent: 'center',
-                          '&.Mui-selected': {
-                            backgroundColor: (theme) => theme.palette.primary.main,
-                            color: 'white',
-                            '&:hover': {
-                              backgroundColor: (theme) => theme.palette.primary.dark,
-                            },
-                            '& .MuiListItemIcon-root': {
-                              color: 'white',
-                            },
-                          },
+                          backgroundColor: isActive(item.path) ? '#4caf50' : 'transparent',
+                          color: 'white',
                           '&:hover': {
-                            backgroundColor: (theme) => 
-                              isActive(item.path) 
-                                ? theme.palette.primary.dark 
-                                : theme.palette.action.hover,
+                            backgroundColor: isActive(item.path) 
+                              ? '#388e3c' 
+                              : 'rgba(76, 175, 80, 0.1)',
                           },
                         }}
                       >
                         <ListItemIcon
                           sx={{
-                            minWidth: 0,
+                            minWidth: 24,
                             justifyContent: 'center',
-                            color: isActive(item.path) ? 'white' : 'inherit',
+                            color: isActive(item.path) ? 'white' : 'rgba(255, 255, 255, 0.95)',
+                            filter: isActive(item.path) ? 'none' : 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))',
                           }}
                         >
                           {item.icon}
@@ -213,21 +226,25 @@ const Sidebar = () => {
                       sx={{
                         borderRadius: 1,
                         mx: 1,
+                        minHeight: 40,
+                        color: 'rgba(255, 255, 255, 0.9)',
                         '&.Mui-selected': {
-                          backgroundColor: (theme) => theme.palette.primary.main,
+                          background: 'rgba(76, 175, 80, 0.3)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(76, 175, 80, 0.5)',
                           color: 'white',
                           '&:hover': {
-                            backgroundColor: (theme) => theme.palette.primary.dark,
+                            background: 'rgba(76, 175, 80, 0.4)',
                           },
                           '& .MuiListItemIcon-root': {
                             color: 'white',
                           },
                         },
                         '&:hover': {
-                          backgroundColor: (theme) => 
-                            isActive(item.path) 
-                              ? theme.palette.primary.dark 
-                              : theme.palette.action.hover,
+                          background: isActive(item.path) 
+                            ? 'rgba(76, 175, 80, 0.4)'
+                            : 'rgba(255, 255, 255, 0.1)',
+                          backdropFilter: 'blur(10px)',
                         },
                       }}
                     >

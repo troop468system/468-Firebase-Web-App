@@ -48,9 +48,9 @@ const createAppTheme = (mode) => createTheme({
   palette: {
     mode: mode,
     primary: {
-      main: mode === 'light' ? '#6BA6CD' : '#90CAF9',  // Lighter blue for dark mode
-      light: mode === 'light' ? '#B3D4F1' : '#BBDEFB',
-      dark: mode === 'light' ? '#4A7FA8' : '#42A5F5',
+      main: '#4caf50',  // Green primary color to match login
+      light: '#81c784',
+      dark: '#388e3c',
       contrastText: '#fff',
     },
     secondary: {
@@ -433,7 +433,19 @@ function App() {
               {/* Protected Routes */}
               <Route path="/*" element={
                 <ProtectedRoute>
-                  <Box sx={{ display: 'flex' }}>
+                  <Box sx={{ 
+                    display: 'flex',
+                    minHeight: '100vh',
+                    height: 'auto',
+                    background: `
+                      linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+                      url('https://images.unsplash.com/photo-1560199738-3d933bc1e714')
+                    `,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center top',
+                    backgroundRepeat: 'repeat-y',
+                    backgroundAttachment: 'fixed'
+                  }}>
                     <Header />
                     <Sidebar />
                     <Box

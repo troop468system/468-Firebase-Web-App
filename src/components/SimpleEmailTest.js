@@ -111,16 +111,36 @@ https://docs.google.com/spreadsheets/d/1GX3U7UH28IcnNH2KQbVG-SVMBcGTmMa01QMEhGTi
   };
 
   return (
-    <Card sx={{ mb: 4 }}>
+    <Card sx={{ 
+      mb: 4,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(15px)',
+      WebkitBackdropFilter: 'blur(15px)',
+      border: '1px solid rgba(76, 175, 80, 0.3)',
+      borderRadius: '15px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+    }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <EmailIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          <EmailIcon sx={{ 
+            mr: 1, 
+            color: '#4caf50',
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+          }} />
+          <Typography variant="h6" sx={{ 
+            fontWeight: 600,
+            color: 'rgba(255, 255, 255, 0.95)',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)'
+          }}>
             📧 Email Integration Test
           </Typography>
         </Box>
         
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography variant="body2" sx={{ 
+          mb: 3,
+          color: 'rgba(255, 255, 255, 0.8)',
+          textShadow: '0 1px 1px rgba(0, 0, 0, 0.3)'
+        }}>
           Test the email system by sending a sample email record to Google Sheets via Apps Script.
         </Typography>
 

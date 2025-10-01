@@ -245,16 +245,35 @@ ${eventsList}
   };
 
   return (
-    <Card>
+    <Card sx={{
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(15px)',
+      WebkitBackdropFilter: 'blur(15px)',
+      border: '1px solid rgba(76, 175, 80, 0.3)',
+      borderRadius: '15px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+    }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <CalendarIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          <CalendarIcon sx={{ 
+            mr: 1, 
+            color: '#4caf50',
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+          }} />
+          <Typography variant="h6" sx={{ 
+            fontWeight: 600,
+            color: 'rgba(255, 255, 255, 0.95)',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)'
+          }}>
             📅 Calendar Event Management
           </Typography>
         </Box>
         
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography variant="body2" sx={{ 
+          mb: 3,
+          color: 'rgba(255, 255, 255, 0.8)',
+          textShadow: '0 1px 1px rgba(0, 0, 0, 0.3)'
+        }}>
           Create, modify, or delete calendar events using Google Apps Script integration.
         </Typography>
 

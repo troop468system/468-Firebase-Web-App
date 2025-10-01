@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useTheme as useAppTheme, useSidebar } from '../App';
+import { useAuth, useSidebar } from '../App';
 import {
   AppBar,
   Toolbar,
@@ -22,16 +22,12 @@ import {
   Logout as LogoutIcon,
   Edit as EditIcon,
   Notifications as NotificationsIcon,
-  LightMode as LightModeIcon,
-  DarkMode as DarkModeIcon,
   Menu as MenuIcon,
-  Hiking as ScoutIcon,
 } from '@mui/icons-material';
 
 const Header = () => {
   const navigate = useNavigate();
   const { currentUser, currentUserProfile, signOut } = useAuth();
-  const { mode, toggleTheme } = useAppTheme();
   const { sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -96,12 +92,15 @@ const Header = () => {
       elevation={0}
       sx={{ 
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: 'primary.main',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
         borderRadius: 0,
         top: 0,
         left: 0,
         right: 0,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
       }}
     >
       <Toolbar>
@@ -131,12 +130,16 @@ const Header = () => {
               justifyContent: 'center',
               mr: 2,
               border: '2px solid rgba(255, 255, 255, 0.3)',
+              overflow: 'hidden'
             }}
           >
-            <ScoutIcon
-              sx={{
-                color: 'white',
-                fontSize: '1.5rem',
+            <img 
+              src="/assets/images/logo-troop-468.png" 
+              alt="Troop 468 Logo"
+              style={{
+                width: '32px',
+                height: '32px',
+                objectFit: 'contain'
               }}
             />
           </Box>
@@ -154,16 +157,6 @@ const Header = () => {
 
         {/* Notifications and Profile Section */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {/* Theme Switch */}
-          <IconButton 
-            color="inherit" 
-            onClick={toggleTheme} 
-            sx={{ mr: 1 }}
-            title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
-          >
-            {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
-          </IconButton>
-          
           <IconButton color="inherit" onClick={() => navigate('/notifications')} sx={{ mr: 1 }}>
             <Badge color="error" variant="dot">
               <NotificationsIcon />

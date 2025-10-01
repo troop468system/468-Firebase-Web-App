@@ -186,21 +186,54 @@ const LoginForm = ({
   };
 
   return (
-    <Paper elevation={3} sx={{ 
+    <Paper elevation={0} className="glass-form" sx={{ 
       p: { xs: 4, sm: 6 }, 
       maxWidth: 480, 
       width: '100%',
-      borderRadius: 2
+      borderRadius: 4,
+      background: 'transparent',
+      backdropFilter: 'blur(20px)',
+      border: 'none',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+      WebkitBackdropFilter: 'blur(20px)' // Safari support
     }}>
       {/* Header */}
       <Box sx={{ 
         textAlign: 'center', 
         mb: 4
       }}>
+        {/* Troop 468 Logo */}
+        <Box 
+          className="logo-container"
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mx: 'auto',
+            mb: 3,
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)',
+            overflow: 'hidden'
+          }}>
+          <img 
+            src="/assets/images/logo-troop-468.png" 
+            alt="Troop 468 Logo"
+            style={{
+              width: '60px',
+              height: '60px',
+              objectFit: 'contain'
+            }}
+          />
+        </Box>
+
         <Typography variant="h4" component="h1" sx={{ 
           fontWeight: 'bold', 
           mb: showGreenLine ? 1 : 2,
-          color: '#34495e'
+          color: 'rgba(255, 255, 255, 0.95)'
         }}>
           {title}
         </Typography>
@@ -217,7 +250,7 @@ const LoginForm = ({
         )}
         
         <Typography variant="body1" sx={{ 
-          color: 'text.secondary',
+          color: 'rgba(255, 255, 255, 0.8)',
           fontSize: '1rem'
         }}>
           {subtitle}
@@ -226,7 +259,7 @@ const LoginForm = ({
 
       {/* Tabs for Login and Registration */}
       {showRegistration && (
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'rgba(255, 255, 255, 0.2)', mb: 3 }}>
           <Tabs 
             key={inFlippedContainer ? 'flipped-tabs' : 'normal-tabs'}
             value={activeTab} 
@@ -234,25 +267,25 @@ const LoginForm = ({
             centered
             sx={{
               '& .MuiTabs-indicator': {
-                backgroundColor: '#4caf50'
+                backgroundColor: 'rgba(255, 255, 255, 0.8)'
               }
             }}
           >
             <Tab 
               label="Sign In" 
               sx={{ 
-                color: 'text.secondary',
+                color: 'rgba(255, 255, 255, 0.7)',
                 '&.Mui-selected': {
-                  color: '#4caf50'
+                  color: 'rgba(255, 255, 255, 0.95)'
                 }
               }}
             />
             <Tab 
               label="New Member" 
               sx={{ 
-                color: 'text.secondary',
+                color: 'rgba(255, 255, 255, 0.7)',
                 '&.Mui-selected': {
-                  color: '#4caf50'
+                  color: 'rgba(255, 255, 255, 0.95)'
                 }
               }}
             />
@@ -263,11 +296,11 @@ const LoginForm = ({
       {/* Forgot Password View */}
       {showForgotPassword ? (
         <>
-          <Typography variant="h6" sx={{ mb: 3, textAlign: 'center', color: '#34495e' }}>
+          <Typography variant="h6" sx={{ mb: 3, textAlign: 'center', color: 'rgba(255, 255, 255, 0.95)' }}>
             Reset Password
           </Typography>
           
-          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'rgba(255, 255, 255, 0.8)' }}>
             Enter your email address and we'll send you a link to reset your password.
           </Typography>
 
@@ -370,7 +403,7 @@ const LoginForm = ({
                     />
                   }
                   label={
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                       Use ID & Password Login
                     </Typography>
                   }
@@ -389,18 +422,12 @@ const LoginForm = ({
                 <Box sx={{ mb: 4 }}>
                   <Button
                     fullWidth
-                    variant="outlined"
+                    variant="contained"
                     size="large"
                     startIcon={<GoogleLogo size={20} />}
                     sx={{ 
                       mb: 3, 
-                      py: 1.5,
-                      borderColor: '#e0e0e0',
-                      color: 'text.primary',
-                      '&:hover': {
-                        borderColor: '#4285f4',
-                        bgcolor: 'rgba(66, 133, 244, 0.04)'
-                      }
+                      py: 1.5
                     }}
                     onClick={handleGoogleSignIn}
                     disabled={loading}
@@ -484,10 +511,10 @@ const LoginForm = ({
                 </Alert>
               )}
 
-              <Typography variant="h6" sx={{ mb: 2, textAlign: 'center', color: '#34495e' }}>
+              <Typography variant="h6" sx={{ mb: 2, textAlign: 'center', color: 'rgba(255, 255, 255, 0.95)' }}>
                 New to Troop 468?
               </Typography>
-              <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
+              <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'rgba(255, 255, 255, 0.8)' }}>
                 Use our registration page to request an account.
               </Typography>
 

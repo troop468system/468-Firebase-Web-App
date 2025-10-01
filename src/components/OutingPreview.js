@@ -890,7 +890,7 @@ const WeatherForecast = ({ startDate, endDate, location }) => {
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           border: '1px solid rgba(0,0,0,0.05)',
           backgroundColor: '#ffffff',
-          color: '#000000'
+          color: '#2c3e50'
         }}>
           <CardContent sx={{ p: 0 }}>
             <Grid container>
@@ -943,9 +943,9 @@ const WeatherForecast = ({ startDate, endDate, location }) => {
                   {/* Compact Hourly Weather List */}
                   <Box sx={{ 
                     p: 2,
-                    backgroundColor: '#ffffff',
-                    color: '#000000'
-                  }}>
+                  backgroundColor: '#ffffff',
+                  color: '#2c3e50'
+                }}>
                     {/* Table Header */}
                     <Grid container sx={{ 
                       mb: 1, 
@@ -984,14 +984,14 @@ const WeatherForecast = ({ startDate, endDate, location }) => {
                           py: 0.5,
                           borderBottom: hourIndex < day.hourlyData.length - 1 ? '1px solid #f5f5f5' : 'none',
                           backgroundColor: '#ffffff',
-                          color: '#000000',
+                          color: '#2c3e50',
                           '&:hover': {
                             backgroundColor: '#f8f9fa'
                           }
                         }}
                       >
                         <Grid item xs={3}>
-                          <Typography variant="caption" sx={{ color: '#333333 !important', fontSize: '0.7rem' }}>
+                          <Typography variant="caption" sx={{ color: '#2c3e50 !important', fontSize: '0.7rem' }}>
                             {hour.time}
                           </Typography>
                         </Grid>
@@ -1290,9 +1290,10 @@ const OutingPreview = ({
       beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80',
       trail: 'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80',
       city: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80',
-      sport: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80'
+      sport: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80',
+      bluesky: 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80'
     };
-    return imageMap[outingData.coverImage] || imageMap.biking;
+    return imageMap[outingData.coverImage] || imageMap.bluesky;
   };
 
   // Group activities by day
@@ -1509,7 +1510,7 @@ const OutingPreview = ({
 
 
   return (
-    <Box sx={{ 
+    <Box  id="preview-root" sx={{ 
       minHeight: isLiveView ? '100vh' : 'auto',
       backgroundColor: '#fff'
     }}>
@@ -1701,14 +1702,15 @@ const OutingPreview = ({
       </Box>
 
       {/* Flip Container */}
-      <Box
+      <Box id="signup-root"
         sx={{
           perspective: '1000px',
           minHeight: isLiveView ? '100vh' : 'auto',
           height: 'auto',
           width: '100%',
           maxWidth: '100%',
-          overflow: 'visible',
+          maxHeight: '100vh',
+          overflow: isFlipped ? 'hidden' : 'visible',
           boxSizing: 'border-box'
         }}
       >
@@ -1740,7 +1742,8 @@ const OutingPreview = ({
               overflow: 'visible',
               overflowWrap: 'break-word',
               wordBreak: 'break-word',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              backfaceVisibility: 'hidden'
             }}
           >
 
@@ -1891,7 +1894,8 @@ const OutingPreview = ({
                     wordBreak: 'break-word !important',
                     overflowWrap: 'break-word !important',
                     whiteSpace: 'normal !important',
-                    boxSizing: 'border-box !important'
+                    boxSizing: 'border-box !important',
+                    color: '#2c3e50 !important'
                   }
                 }}
                 dangerouslySetInnerHTML={{ __html: outingData.overview }}
@@ -1955,7 +1959,8 @@ const OutingPreview = ({
                     wordBreak: 'break-word !important',
                     overflowWrap: 'break-word !important',
                     whiteSpace: 'normal !important',
-                    boxSizing: 'border-box !important'
+                    boxSizing: 'border-box !important',
+                    color: '#2c3e50 !important'
                   }
                 }}
                 dangerouslySetInnerHTML={{ __html: outingData.detail }}
@@ -2091,7 +2096,8 @@ const OutingPreview = ({
                     wordBreak: 'break-word !important',
                     overflowWrap: 'break-word !important',
                     whiteSpace: 'normal !important',
-                    boxSizing: 'border-box !important'
+                    boxSizing: 'border-box !important',
+                    color: '#2c3e50 !important'
                   }
                 }}
                 dangerouslySetInnerHTML={{ __html: outingData[item.key] }}
@@ -2197,13 +2203,20 @@ const OutingPreview = ({
           top: 0,
           left: 0,
           width: '100%',
-          backgroundColor: '#fff',
-          minHeight: isLiveView ? '100vh' : '800px',
+          background: `
+            linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+            url('https://images.unsplash.com/photo-1531147646552-1eec68116469')
+          `,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+          minHeight: isLiveView ? '100vh' : 'auto',
           boxShadow: 'none',
           borderRadius: 0,
           overflow: 'auto',
           backfaceVisibility: 'hidden',
           transform: 'rotateY(180deg)',
+          display: isFlipped ? 'block' : 'none'
         }}
       >
         {/* Back Button */}
@@ -2224,19 +2237,24 @@ const OutingPreview = ({
           <ArrowBackIcon />
         </IconButton>
 
-        <Container maxWidth="md" sx={{ py: 8 }}>
+        <Container id="signup-form" maxWidth="md" sx={{ 
+          py: 8,
+          backgroundColor: 'transparent'
+        }}>
           {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 6 }}>
             <Typography variant="h3" component="h1" sx={{ 
               fontWeight: 700, 
-              color: '#1976d2', 
-              mb: 2 
+              color: '#4caf50', 
+              mb: 2,
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
             }}>
               Sign Up for {outingData.eventName || 'Event'}
             </Typography>
             <Typography variant="body1" sx={{ 
-              color: '#888', 
-              mt: 1 
+              color: 'rgba(255, 255, 255, 0.9)', 
+              mt: 1,
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
             }}>
               {(() => {
                 if (!outingData.startDateTime || !outingData.endDateTime) {
@@ -2299,8 +2317,11 @@ const OutingPreview = ({
               />
             </Box>
           ) : (
-            <Card sx={{ p: 4 }}>
-              <Typography variant="h5" sx={{ mb: 3, color: '#1976d2' }}>
+            <Card className="signup-form-card" sx={{ 
+              p: 4,
+              borderRadius: 3
+            }}>
+              <Typography variant="h5" sx={{ mb: 3, color: '#4caf50' }}>
                 Event Registration
               </Typography>
               
@@ -2342,7 +2363,7 @@ const OutingPreview = ({
                 {/* Attendance */}
                 <Grid item xs={12}>
                   <FormControl component="fieldset">
-                    <FormLabel component="legend" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+                    <FormLabel component="legend" sx={{ mb: 2, color: '#4caf50', fontWeight: 600 }}>
                       Will you be attending this event? *
                     </FormLabel>
                     <RadioGroup
